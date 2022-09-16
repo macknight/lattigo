@@ -14,7 +14,7 @@ import (
 )
 
 // MaxLogN is the log2 of the largest supported polynomial modulus degree.
-const MaxLogN = 17
+const MaxLogN = 19
 
 // MinLogN is the log2 of the smallest supported polynomial modulus degree (needed to ensure the NTT correctness).
 const MinLogN = 4
