@@ -226,7 +226,16 @@ func main() {
 	tevaluator.InnerSumLog(encOut, 1, len(expRes), encOut)
 	encOut.Scale *= float64(len(expRes))
 	decryptedResult := encoder.Decode(decryptor.DecryptNew(encOut), params.LogSlots())
-	fmt.Printf("> CKKS Average of elements of encOut: %f", real(decryptedResult[0]))
+	fmt.Printf("> CKKS Average of elements of encOut[0]: %f", real(decryptedResult[0]))
+	fmt.Println()
+	fmt.Printf("> CKKS Average of elements of encOut[1]: %f", real(decryptedResult[1]))
+	fmt.Println()
+	fmt.Printf("> CKKS Average of elements of encOut[2]: %f", real(decryptedResult[2]))
+	fmt.Println()
+	fmt.Printf("> CKKS Average of elements of encOut[3]: %f", real(decryptedResult[3]))
+	fmt.Println()
+	fmt.Printf("> CKKS Average of elements of encOut[4]: %f", real(decryptedResult[4]))
+	fmt.Println()
 
 	fmt.Printf("> Finished (total cloud: %s, total party: %s)\n",
 		elapsedCKGCloud+elapsedRKGCloud+elapsedEncryptCloud+elapsedEvalCloud+elapsedPCKSCloud,
