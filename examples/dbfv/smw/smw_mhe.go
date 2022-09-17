@@ -112,7 +112,8 @@ func main() {
 	check(err)
 	encoder := ckks.NewEncoder(params)
 	// Target private and public keys
-	tsk, tpk := ckks.NewKeyGenerator(params).GenKeyPair()
+	tkgen := ckks.NewKeyGenerator(params)
+	tsk, tpk := tkgen.GenKeyPair()
 
 	NGoRoutine := 1 // Default number of Go routines
 
@@ -132,9 +133,9 @@ func main() {
 
 	// 2) Collective relinearization key generation
 	rlk := rkgphase(params, crs, P)
-	rotk := rtgphase(params, crs, P)
+	// rotk := rtgphase(params, crs, P)
 
-	evaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: rlk, Rtks: rotk})
+	evaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: rlk, Rtks: nil})
 
 	l.Printf("\tdone (cloud: %s, party: %s)\n",
 		elapsedRKGCloud, elapsedRKGParty)
@@ -171,10 +172,6 @@ func main() {
 	encRes = encInputs[0]
 	fmt.Println("level encRes:", encRes.Level())
 
-	//calcuate the average of encRes
-	evaluator.InnerSumLog(encRes, 1, len(expRes), encRes)
-	encRes.Scale *= float64(len(expRes))
-
 	//key switching!!!
 	//ciphertext->ciphertext, key switching to the target key pair tpk/tsk for further usage
 	encOut := pcksPhase(params, tpk, encRes, P) // ckks.ciphertext
@@ -192,7 +189,7 @@ func main() {
 	// Check the result
 	res := encoder.Decode(ptres, params.LogSlots())
 	//print result
-	visibleNum := 3
+	visibleNum := 4
 
 	fmt.Println("> Parties:")
 	//different parties
@@ -206,10 +203,10 @@ func main() {
 		fmt.Println()
 	}
 
-	fmt.Printf("> CKKS Average of parties:\t\t")
+	fmt.Printf("> CKKS Average of parties(encOut):\t\t")
 	for i, r := range res {
 		if i < visibleNum || (i > len(expRes)-visibleNum && i < len(expRes)) {
-			fmt.Printf("encOut[%d]%.6f\t", i, real(r))
+			fmt.Printf("[%d]%.6f\t", i, real(r))
 		}
 	}
 	fmt.Println()
@@ -221,8 +218,15 @@ func main() {
 	fmt.Printf("> Expected Average of elements of encOut: %.6f", expSum/float64(len(expRes)))
 	fmt.Println()
 
+	trlk := tkgen.GenRelinearizationKey(tsk, 1)
+	trotations := params.RotationsForInnerSumLog(1, len(expRes))
+	trotKey := tkgen.GenRotationKeysForRotations(trotations, false, tsk)
+	tevaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: trlk, Rtks: trotKey})
+	//calcuate the average of encOut
+	tevaluator.InnerSumLog(encOut, 1, len(expRes), encOut)
+	encOut.Scale *= float64(len(expRes))
 	decryptedResult := encoder.Decode(decryptor.DecryptNew(encOut), params.LogSlots())
-	fmt.Printf("> CKKS Average of encOut: %f", real(decryptedResult[0]))
+	fmt.Printf("> CKKS Average of elements of encOut: %f", real(decryptedResult[0]))
 
 	fmt.Printf("> Finished (total cloud: %s, total party: %s)\n",
 		elapsedCKGCloud+elapsedRKGCloud+elapsedEncryptCloud+elapsedEvalCloud+elapsedPCKSCloud,
@@ -392,7 +396,7 @@ func genInputs(params ckks.Parameters, P []*party) (expRes []float64) {
 		lenPartyRows := len(partyRows)
 
 		if globalPartyRows == -1 {
-			//global setting
+			//global setting, run once
 			globalPartyRows = lenPartyRows
 			expRes = make([]float64, globalPartyRows)
 		} else if globalPartyRows != lenPartyRows {
@@ -407,6 +411,11 @@ func genInputs(params ckks.Parameters, P []*party) (expRes []float64) {
 			expRes[i] += pi.input[i]
 		}
 
+	}
+
+	//average by P parties
+	for i, _ := range expRes {
+		expRes[i] /= float64(len(P))
 	}
 
 	return
@@ -487,6 +496,20 @@ func rtgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Rotation
 		}
 	})
 	elapsedRTGCloud -= elapsedRTGParty
+	// elapsedRTGParty = runTimedParty(func() {
+	// 	for _, pi := range P {
+	// 		rtg.GenShare(pi.sk, galEls[len(galEls)-1], crp, pi.rtgShare)
+	// 	}
+	// }, len(P))
+
+	// elapsedRTGCloud = runTimed(func() {
+	// 	for _, galEl := range galEls {
+	// 		for _, pi := range P {
+	// 			rtg.AggregateShare(pi.rtgShare, rtgCombined, rtgCombined)
+	// 		}
+	// 		rtg.GenRotationKey(rtgCombined, crp, rotKeySet.Keys[galEl])
+	// 	}
+	// })
 
 	return rotKeySet
 }
