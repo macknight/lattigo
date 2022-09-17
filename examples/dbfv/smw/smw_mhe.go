@@ -1,17 +1,20 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/tuneinsight/lattigo/v3/ckks"
 	"github.com/tuneinsight/lattigo/v3/dckks"
 	"github.com/tuneinsight/lattigo/v3/drlwe"
+	"github.com/tuneinsight/lattigo/v3/ring"
 	"github.com/tuneinsight/lattigo/v3/rlwe"
 	"github.com/tuneinsight/lattigo/v3/utils"
 )
@@ -42,13 +45,19 @@ func runTimedParty(f func(), N int) time.Duration {
 }
 
 type party struct {
+	id         int
+	folderName string
 	sk         *rlwe.SecretKey
 	rlkEphemSk *rlwe.SecretKey
-
-	ckgShare    *drlwe.CKGShare
+	//ckgphase
+	ckgShare *drlwe.CKGShare
+	//rkgphase
 	rkgShareOne *drlwe.RKGShare
 	rkgShareTwo *drlwe.RKGShare
-	pcksShare   *drlwe.PCKSShare
+	//rtgphase
+	rtgShare *drlwe.RTGShare
+	//pcksphase
+	pcksShare *drlwe.PCKSShare
 
 	input []float64
 }
@@ -67,12 +76,16 @@ var elapsedCKGCloud time.Duration
 var elapsedCKGParty time.Duration
 var elapsedRKGCloud time.Duration
 var elapsedRKGParty time.Duration
+var elapsedRTGCloud time.Duration
+var elapsedRTGParty time.Duration
 var elapsedPCKSCloud time.Duration
 var elapsedPCKSParty time.Duration
 var elapsedEvalCloudCPU time.Duration
 var elapsedEvalCloud time.Duration
 var elapsedEvalParty time.Duration
+var pathFormat = "C:\\Users\\23304161\\source\\smw\\%s\\House_10sec_1month_%d.csv"
 
+//main start
 func main() {
 	// For more details about the PSI example see
 	//     Multiparty Homomorphic Encryption: From Theory to Practice (<https://eprint.iacr.org/2020/304>)
@@ -83,7 +96,15 @@ func main() {
 	// arg2: number of Go routines
 	var err error
 	// Creating encryption parameters from a default params with logN=14, logQP=438 with a plaintext modulus T=65537
-	paramsDef := ckks.PN14QP438CI //PN16QP1761CI
+	// paramsDef := ckks.PN14QP438CI //PN16QP1761CI
+	paramsDef := ckks.ParametersLiteral{
+		LogN:         18,
+		LogQ:         []int{55, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40},
+		LogP:         []int{45, 45},
+		LogSlots:     18,
+		RingType:     ring.ConjugateInvariant,
+		DefaultScale: 1 << 45,
+	}
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
 
@@ -93,22 +114,27 @@ func main() {
 	// Target private and public keys
 	tsk, tpk := ckks.NewKeyGenerator(params).GenKeyPair()
 
-	// Largest for n=8192: 512 parties
-	N := 5          // Default number of parties
 	NGoRoutine := 1 // Default number of Go routines
 
-	path := "C:\\Users\\23304161\\source\\smw\\200Houses_10s_1month_highNE\\"
+	folderName := "200Houses_10s_1month_highNE"
+	householdIDs := []int{1, 2, 3}
+	// Largest for n=8192: 512 parties
+	// N := 5 // Default number of parties
+
 	// Create each party, and allocate the memory for all the shares that the protocols will need
-	P := genparties(params, N)
+	P := genparties(params, folderName, householdIDs)
 
 	// Inputs & expected result, cleartext result
-	expRes := genInputs(params, P)
+	expRes := genInputs(params, P) //read CSV files, len(expRes) == size of rows
 
 	// 1) Collective public key generation
 	pk := ckgphase(params, crs, P)
 
 	// 2) Collective relinearization key generation
 	rlk := rkgphase(params, crs, P)
+	rotk := rtgphase(params, crs, P)
+
+	evaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: rlk, Rtks: rotk})
 
 	l.Printf("\tdone (cloud: %s, party: %s)\n",
 		elapsedRKGCloud, elapsedRKGParty)
@@ -117,6 +143,10 @@ func main() {
 
 	//generate ciphertexts
 	encInputs := encPhase(params, P, pk, encoder)
+	fmt.Println("level[]:")
+	for _, encInput := range encInputs {
+		fmt.Println("level:", encInput.Level())
+	}
 	var tmpEncInputs []*ckks.Ciphertext
 	var encRes *ckks.Ciphertext
 	var sumGroupSize int
@@ -132,65 +162,77 @@ func main() {
 			if binaryStr[i] == 49 { // '1'
 				groupSize := int(math.Pow(2, float64(lenBinaryStr-i-1)))
 				//multiple ciphertexts->one ciphertext
-				tmpEncInputs = append(tmpEncInputs, evalPhase(params, NGoRoutine, encInputs[sumGroupSize:sumGroupSize+groupSize], rlk))
+				tmpEncInputs = append(tmpEncInputs, evalPhase(params, NGoRoutine, encInputs[sumGroupSize:sumGroupSize+groupSize], evaluator))
 				sumGroupSize += groupSize
 			}
 		}
 		encInputs = tmpEncInputs
 	}
 	encRes = encInputs[0]
+	fmt.Println("level encRes:", encRes.Level())
 
+	//calcuate the average of encRes
+	evaluator.InnerSumLog(encRes, 1, len(expRes), encRes)
+	encRes.Scale *= float64(len(expRes))
+
+	//key switching!!!
 	//ciphertext->ciphertext, key switching to the target key pair tpk/tsk for further usage
-	encOut := pcksPhase(params, tpk, encRes, P)
+	encOut := pcksPhase(params, tpk, encRes, P) // ckks.ciphertext
+	encOut.Scale *= float64(len(P))
+	fmt.Println("level encOut:", encOut.Level())
 
 	// Decrypt the result with the target secret key
 	l.Println("> Result:")
 	decryptor := ckks.NewDecryptor(params, tsk) // decrypt using the target secret key
 	ptres := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 	elapsedDecParty := runTimed(func() {
-		decryptor.Decrypt(encOut, ptres)
+		decryptor.Decrypt(encOut, ptres) //ciphertext->plaintext
 	})
 
 	// Check the result
 	res := encoder.Decode(ptres, params.LogSlots())
 	//print result
-	visibleNum := 5
-	fmt.Printf("Result%3d:\t\t", 0)
-	for i, r := range res {
-		if i < visibleNum {
-			fmt.Printf("%.6f\t", real(r))
-		}
-	}
-	fmt.Println()
+	visibleNum := 3
 
 	fmt.Println("> Parties:")
 	//different parties
 	for i, pi := range P {
-		fmt.Printf("Party %3d:\t\t", i)
+		fmt.Printf("Party %3d(%d):\t\t", i, len(pi.input))
 		for j, element := range pi.input {
-			if j < visibleNum {
-				fmt.Printf("%.6f\t", element)
+			if j < visibleNum || (j > len(expRes)-visibleNum && j < len(expRes)) {
+				fmt.Printf("[%d]%.6f\t", j, element)
 			}
 		}
 		fmt.Println()
 	}
 
-	for i := range expRes {
-		if !almostEqual(expRes[i], real(res[i])) {
-			//l.Printf("\t%v\n", expRes)
-			fmt.Println("\tincorrect")
-			return
+	fmt.Printf("> CKKS Average of parties:\t\t")
+	for i, r := range res {
+		if i < visibleNum || (i > len(expRes)-visibleNum && i < len(expRes)) {
+			fmt.Printf("encOut[%d]%.6f\t", i, real(r))
 		}
 	}
+	fmt.Println()
 
-	l.Println("\tcorrect")
-	l.Printf("> Finished (total cloud: %s, total party: %s)\n",
+	expSum := float64(0)
+	for _, expRe := range expRes {
+		expSum += expRe
+	}
+	fmt.Printf("> Expected Average of elements of encOut: %.6f", expSum/float64(len(expRes)))
+	fmt.Println()
+
+	decryptedResult := encoder.Decode(decryptor.DecryptNew(encOut), params.LogSlots())
+	fmt.Printf("> CKKS Average of encOut: %f", real(decryptedResult[0]))
+
+	fmt.Printf("> Finished (total cloud: %s, total party: %s)\n",
 		elapsedCKGCloud+elapsedRKGCloud+elapsedEncryptCloud+elapsedEvalCloud+elapsedPCKSCloud,
 		elapsedCKGParty+elapsedRKGParty+elapsedEncryptParty+elapsedEvalParty+elapsedPCKSParty+elapsedDecParty)
-
+	fmt.Println()
 }
 
-// this is encPhase!!
+//main end
+
+// encPhase to get []ciphertext
 func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ckks.Encoder) (encInputs []*ckks.Ciphertext) {
 
 	l := log.New(os.Stderr, "", 0)
@@ -218,7 +260,8 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 	return
 }
 
-func evalPhase(params ckks.Parameters, NGoRoutine int, encInputs []*ckks.Ciphertext, rlk *rlwe.RelinearizationKey) (encRes *ckks.Ciphertext) {
+//evaluator phase between parties
+func evalPhase(params ckks.Parameters, NGoRoutine int, encInputs []*ckks.Ciphertext, evaluator ckks.Evaluator) (encRes *ckks.Ciphertext) {
 
 	l := log.New(os.Stderr, "", 0)
 
@@ -233,7 +276,6 @@ func evalPhase(params ckks.Parameters, NGoRoutine int, encInputs []*ckks.Ciphert
 	}
 	encRes = encLvls[len(encLvls)-1][0]
 
-	evaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: rlk, Rtks: nil})
 	// Split the task among the Go routines
 	tasks := make(chan *task)
 	workers := &sync.WaitGroup{}
@@ -288,13 +330,17 @@ func evalPhase(params ckks.Parameters, NGoRoutine int, encInputs []*ckks.Ciphert
 	return
 }
 
-func genparties(params ckks.Parameters, N int) []*party {
-
+//generate parties
+func genparties(params ckks.Parameters, folderName string, householdIDs []int) []*party {
+	N := len(householdIDs)
 	// Create each party, and allocate the memory for all the shares that the protocols will need
 	P := make([]*party, N)
-	for i := range P {
+
+	for i, id := range householdIDs {
 		pi := &party{}
 		pi.sk = ckks.NewKeyGenerator(params).GenSecretKey()
+		pi.id = id
+		pi.folderName = folderName
 
 		P[i] = pi
 	}
@@ -302,21 +348,63 @@ func genparties(params ckks.Parameters, N int) []*party {
 	return P
 }
 
-func genInputs(params ckks.Parameters, P []*party) (expRes []float64) {
+//file reading
+func ReadCSV(path string) []string {
+	fmt.Println("reading without buffer:")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	// fmt.Println("data:", string(data))
+	dArray := strings.Split(string(data), "\n")
+	fmt.Println("original CSV size:", len(dArray))
+	dArray2 := dArray[1 : len(dArray)-1]
+	fmt.Println("data CSV size:", len(dArray2)) //[0]..[241919]
+	return dArray2
+}
 
-	expRes = make([]float64, params.Slots())
-	for i := range expRes {
-		expRes[i] = 1
+//trim csv
+func resizeCSV(folderName string, id int) []float64 {
+
+	path := fmt.Sprintf(pathFormat, folderName, id)
+	csv := ReadCSV(path)
+
+	elements := []float64{}
+	for _, v := range csv {
+		slices := strings.Split(v, ",")
+		tmpStr := slices[len(slices)-1]
+		fNum, err := strconv.ParseFloat(tmpStr, 64)
+		if err != nil {
+			panic(err)
+		}
+		elements = append(elements, fNum)
 	}
 
-	for _, pi := range P {
+	return elements
+}
 
-		pi.input = make([]float64, params.N())
+//generate inputs of parties
+func genInputs(params ckks.Parameters, P []*party) (expRes []float64) {
+
+	globalPartyRows := -1
+	for _, pi := range P {
+		partyRows := resizeCSV(pi.folderName, pi.id)
+		lenPartyRows := len(partyRows)
+
+		if globalPartyRows == -1 {
+			//global setting
+			globalPartyRows = lenPartyRows
+			expRes = make([]float64, globalPartyRows)
+		} else if globalPartyRows != lenPartyRows {
+			//make sure pi.input[] has the same size
+			err := errors.New("Not all files have the same rows")
+			check(err)
+		}
+
+		pi.input = make([]float64, lenPartyRows)
 		for i := range pi.input {
-			if utils.RandFloat64(0, 1) > 0.3 || i == 4 {
-				pi.input[i] = 1.01
-			}
-			expRes[i] += float64(pi.input[i])
+			pi.input[i] = partyRows[i]
+			expRes[i] += pi.input[i]
 		}
 
 	}
@@ -324,6 +412,7 @@ func genInputs(params ckks.Parameters, P []*party) (expRes []float64) {
 	return
 }
 
+//key switching phase
 func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphertext, P []*party) (encOut *ckks.Ciphertext) {
 
 	l := log.New(os.Stderr, "", 0)
@@ -359,6 +448,50 @@ func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphert
 
 }
 
+//generate collective rotation key
+func rtgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.RotationKeySet {
+	l := log.New(os.Stderr, "", 0)
+
+	l.Println("> RTG Phase")
+
+	rtg := dckks.NewRotKGProtocol(params) // Rotation key generation
+	rtgCombined := rtg.AllocateShare()
+
+	for _, pi := range P {
+		pi.rtgShare = rtg.AllocateShare()
+	}
+
+	crp := rtg.SampleCRP(crs)
+	//get rotations
+	ks := params.RotationsForInnerSumLog(1, len(P[0].input))
+	//get galEls from rotations, refer to "GenRotationKeysForRotations"
+	//not includeConjugate
+	galEls := make([]uint64, len(ks), len(ks)+1)
+	for i, k := range ks {
+		galEls[i] = params.GaloisElementForColumnRotationBy(k)
+	}
+	//get rks
+	rotKeySet := ckks.NewRotationKeySet(params, galEls)
+
+	//rest elapsedRTGParty
+	elapsedRTGParty = 0
+	elapsedRTGCloud = runTimed(func() {
+		for _, galEl := range galEls {
+			for _, pi := range P {
+				elapsedRTGParty += runTimedParty(func() {
+					rtg.GenShare(pi.sk, galEl, crp, pi.rtgShare)
+				}, 1)
+				rtg.AggregateShare(pi.rtgShare, rtgCombined, rtgCombined)
+			}
+			rtg.GenRotationKey(rtgCombined, crp, rotKeySet.Keys[galEl])
+		}
+	})
+	elapsedRTGCloud -= elapsedRTGParty
+
+	return rotKeySet
+}
+
+//generate collective relinearization key
 func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.RelinearizationKey {
 	l := log.New(os.Stderr, "", 0)
 
@@ -404,6 +537,7 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 	return rlk
 }
 
+//geneate collective public key
 func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKey {
 
 	l := log.New(os.Stderr, "", 0)

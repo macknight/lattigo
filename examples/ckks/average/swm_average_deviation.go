@@ -12,9 +12,9 @@ import (
 	"github.com/tuneinsight/lattigo/v3/rlwe"
 )
 
-func ReadCSV2() []string {
+func ReadCSV2(path string) []string {
 	fmt.Println("reading without buffer:")
-	data, err := os.ReadFile("C:\\Users\\23304161\\source\\smw\\200Houses_10s_1month_highNE\\House_10sec_1month_1.csv")
+	data, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
@@ -25,8 +25,15 @@ func ReadCSV2() []string {
 	fmt.Println("data CSV size:", len(dArray2)) //[0]..[241919]
 	return dArray2
 }
+
 func resizeCSV2() []float64 {
-	csv := ReadCSV2()
+	pathFormat := "C:\\Users\\23304161\\source\\smw\\%s\\House_10sec_1month_%d.csv"
+	folderName := "200Houses_10s_1month_highNE"
+	id := 1
+
+	path := fmt.Sprintf(pathFormat, folderName, id)
+	csv := ReadCSV2(path)
+
 	elements := []float64{}
 	for _, v := range csv {
 		slices := strings.Split(v, ",")
@@ -47,6 +54,7 @@ func main() {
 }
 
 func deviation2() {
+
 	var start time.Time
 	var err error
 	values := resizeCSV2()
@@ -74,7 +82,14 @@ func deviation2() {
 	sk, pk := kgen.GenKeyPair()
 
 	rlk := kgen.GenRelinearizationKey(sk, 1)
-	rotKey := kgen.GenRotationKeysForRotations(params.RotationsForInnerSumLog(batch, n), false, sk)
+	rotations := params.RotationsForInnerSumLog(batch, n)
+	// fmt.Println("rotations:", len(rotations))
+	// for _, r := range rotations {
+	// 	fmt.Println(r)
+	// }
+
+	// return
+	rotKey := kgen.GenRotationKeysForRotations(rotations, false, sk)
 	encryptor := ckks.NewEncryptor(params, pk)
 	decryptor := ckks.NewDecryptor(params, sk)
 	encoder := ckks.NewEncoder(params)
@@ -99,14 +114,32 @@ func deviation2() {
 	start = time.Now()
 	ciphertext := encryptor.EncryptNew(plaintext) ////ciphertext
 	//average for vector whose elements number is a power of non-2
+	fmt.Println("level:", ciphertext.Level())
+	fmt.Println("batch", batch)
+	fmt.Println("n", n)
 	evaluator.InnerSumLog(ciphertext, batch, n, ciphertext)
 	//manually multiply ciphertext.Scale by 1/len(values)
 	ciphertext.Scale *= float64(len(values))
-
+	fmt.Println("level:", ciphertext.Level())
 	//print out avarage:
 	decryptedResult := encoder.Decode(decryptor.DecryptNew(ciphertext), params.LogSlots())
 	fmt.Printf("CKKS Average: %f", real(decryptedResult[0]))
 	fmt.Println()
+	fmt.Printf("CKKS Average: %f", real(decryptedResult[1]))
+	fmt.Println()
+	fmt.Printf("CKKS Average: %f", real(decryptedResult[2]))
+	fmt.Println()
+	fmt.Printf("CKKS Average: %f", real(decryptedResult[3]))
+	fmt.Println()
+	fmt.Printf("CKKS Average: %f", real(decryptedResult[4]))
+	fmt.Println()
+	fmt.Printf("CKKS Average: %f", real(decryptedResult[5]))
+	fmt.Println()
+	fmt.Printf("CKKS Average: %f", real(decryptedResult[6]))
+	fmt.Println()
+	fmt.Printf("CKKS Average: %f", real(decryptedResult[7]))
+	fmt.Println()
+
 	fmt.Printf("Arithmetic Average: %f", average)
 	///////////////////////////////////////////////////////////////////
 	fmt.Println()
@@ -131,13 +164,14 @@ func deviation2() {
 	fmt.Println()
 	start = time.Now()
 
+	fmt.Println("level:", ciphertext.Level())
 	evaluator.Add(ciphertext, ciphertext2, ciphertext) // average - values[i]
 	evaluator.Power(ciphertext, int(2), ciphertext)
 	//average for vector whose elements number is a power of non-2
 	evaluator.InnerSumLog(ciphertext, batch, n, ciphertext)
 	//manually multiply ciphertext.Scale by 1/len(values)
 	ciphertext.Scale *= float64(len(values))
-
+	fmt.Println("level:", ciphertext.Level())
 	fmt.Printf("Done in %s \n", time.Since(start))
 	deviation := float64(0)
 	for i := range values {
