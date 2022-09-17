@@ -224,7 +224,7 @@ func main() {
 	tevaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: trlk, Rtks: trotKey})
 	//calcuate the average of encOut
 	tevaluator.InnerSumLog(encOut, 1, len(expRes), encOut)
-	encOut.Scale *= float64(len(expRes))
+	encOut.Scale *= -float64(len(expRes))
 	decryptedResult := encoder.Decode(decryptor.DecryptNew(encOut), params.LogSlots())
 	fmt.Printf("> CKKS Average of elements of encOut[0]: %f", real(decryptedResult[0]))
 	fmt.Println()
