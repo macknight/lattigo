@@ -45,19 +45,15 @@ func runTimedParty(f func(), N int) time.Duration {
 }
 
 type party struct {
-	id         int
-	folderName string
-	sk         *rlwe.SecretKey
-	rlkEphemSk *rlwe.SecretKey
-	//ckgphase
-	ckgShare *drlwe.CKGShare
-	//rkgphase
+	id          int
+	folderName  string
+	sk          *rlwe.SecretKey
+	rlkEphemSk  *rlwe.SecretKey
+	ckgShare    *drlwe.CKGShare
 	rkgShareOne *drlwe.RKGShare
 	rkgShareTwo *drlwe.RKGShare
-	//rtgphase
-	rtgShare *drlwe.RTGShare
-	//pcksphase
-	pcksShare *drlwe.PCKSShare
+	rtgShare    *drlwe.RTGShare
+	pcksShare   *drlwe.PCKSShare
 
 	input []float64
 }
@@ -133,9 +129,9 @@ func main() {
 
 	// 2) Collective relinearization key generation
 	rlk := rkgphase(params, crs, P)
-	// rotk := rtgphase(params, crs, P)
+	rotk := rtkgphase(params, crs, P)
 
-	evaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: rlk, Rtks: nil})
+	evaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: rlk, Rtks: rotk})
 
 	l.Printf("\tdone (cloud: %s, party: %s)\n",
 		elapsedRKGCloud, elapsedRKGParty)
@@ -172,6 +168,10 @@ func main() {
 	encRes = encInputs[0]
 	fmt.Println("level encRes:", encRes.Level())
 
+	// //calcuate the average of encOut
+	evaluator.InnerSumLog(encRes, 1, params.Slots(), encRes)
+	encRes.Scale *= float64(len(expRes))
+
 	//key switching!!!
 	//ciphertext->ciphertext, key switching to the target key pair tpk/tsk for further usage
 	encOut := pcksPhase(params, tpk, encRes, P) // ckks.ciphertext
@@ -203,7 +203,7 @@ func main() {
 		fmt.Println()
 	}
 
-	fmt.Printf("> CKKS Average of parties(encOut):\t\t")
+	fmt.Printf("> CKKS Average of parties(encOut,size_%d):\t\t", len(res))
 	for i, r := range res {
 		if i < visibleNum || (i > len(expRes)-visibleNum && i < len(expRes)) {
 			fmt.Printf("[%d]%.6f\t", i, real(r))
@@ -217,26 +217,6 @@ func main() {
 	}
 	fmt.Printf("> Expected Average of elements of encOut: %.6f", expSum/float64(len(expRes)))
 	fmt.Println()
-
-	trlk := tkgen.GenRelinearizationKey(tsk, 1)
-	trotations := params.RotationsForInnerSumLog(1, len(expRes))
-	trotKey := tkgen.GenRotationKeysForRotations(trotations, false, tsk)
-	tevaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: trlk, Rtks: trotKey})
-	//calcuate the average of encOut
-	tevaluator.InnerSumLog(encOut, 1, len(expRes), encOut)
-	encOut.Scale *= -float64(len(expRes))
-	decryptedResult := encoder.Decode(decryptor.DecryptNew(encOut), params.LogSlots())
-	fmt.Printf("> CKKS Average of elements of encOut[0]: %f", real(decryptedResult[0]))
-	fmt.Println()
-	fmt.Printf("> CKKS Average of elements of encOut[1]: %f", real(decryptedResult[1]))
-	fmt.Println()
-	fmt.Printf("> CKKS Average of elements of encOut[2]: %f", real(decryptedResult[2]))
-	fmt.Println()
-	fmt.Printf("> CKKS Average of elements of encOut[3]: %f", real(decryptedResult[3]))
-	fmt.Println()
-	fmt.Printf("> CKKS Average of elements of encOut[4]: %f", real(decryptedResult[4]))
-	fmt.Println()
-
 	fmt.Printf("> Finished (total cloud: %s, total party: %s)\n",
 		elapsedCKGCloud+elapsedRKGCloud+elapsedEncryptCloud+elapsedEvalCloud+elapsedPCKSCloud,
 		elapsedCKGParty+elapsedRKGParty+elapsedEncryptParty+elapsedEvalParty+elapsedPCKSParty+elapsedDecParty)
@@ -444,7 +424,7 @@ func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphert
 		pi.pcksShare = pcks.AllocateShare(params.MaxLevel())
 	}
 
-	l.Println("> PCKS Phase")
+	l.Println("> PCKS Phase(key switching)")
 	elapsedPCKSParty = runTimedParty(func() {
 		for _, pi := range P {
 			pcks.GenShare(pi.sk, tpk, encRes.Value[1], pi.pcksShare)
@@ -467,58 +447,40 @@ func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphert
 }
 
 //generate collective rotation key
-func rtgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.RotationKeySet {
+func rtkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.RotationKeySet {
 	l := log.New(os.Stderr, "", 0)
 
-	l.Println("> RTG Phase")
+	l.Println("> RTKG Phase(collective rotation key)")
 
-	rtg := dckks.NewRotKGProtocol(params) // Rotation key generation
-	rtgCombined := rtg.AllocateShare()
+	rtg := dckks.NewRotKGProtocol(params) // Rotation keys generation
 
 	for _, pi := range P {
 		pi.rtgShare = rtg.AllocateShare()
 	}
 
-	crp := rtg.SampleCRP(crs)
-	//get rotations
-	ks := params.RotationsForInnerSumLog(1, len(P[0].input))
-	//get galEls from rotations, refer to "GenRotationKeysForRotations"
-	//not includeConjugate
-	galEls := make([]uint64, len(ks), len(ks)+1)
-	for i, k := range ks {
-		galEls[i] = params.GaloisElementForColumnRotationBy(k)
-	}
-	//get rks
+	galEls := params.GaloisElementsForRowInnerSum()
 	rotKeySet := ckks.NewRotationKeySet(params, galEls)
 
-	//rest elapsedRTGParty
-	elapsedRTGParty = 0
-	elapsedRTGCloud = runTimed(func() {
-		for _, galEl := range galEls {
-			for _, pi := range P {
-				elapsedRTGParty += runTimedParty(func() {
-					rtg.GenShare(pi.sk, galEl, crp, pi.rtgShare)
-				}, 1)
-				rtg.AggregateShare(pi.rtgShare, rtgCombined, rtgCombined)
-			}
-			rtg.GenRotationKey(rtgCombined, crp, rotKeySet.Keys[galEl])
-		}
-	})
-	elapsedRTGCloud -= elapsedRTGParty
-	// elapsedRTGParty = runTimedParty(func() {
-	// 	for _, pi := range P {
-	// 		rtg.GenShare(pi.sk, galEls[len(galEls)-1], crp, pi.rtgShare)
-	// 	}
-	// }, len(P))
+	for _, galEl := range galEls {
 
-	// elapsedRTGCloud = runTimed(func() {
-	// 	for _, galEl := range galEls {
-	// 		for _, pi := range P {
-	// 			rtg.AggregateShare(pi.rtgShare, rtgCombined, rtgCombined)
-	// 		}
-	// 		rtg.GenRotationKey(rtgCombined, crp, rotKeySet.Keys[galEl])
-	// 	}
-	// })
+		rtgShareCombined := rtg.AllocateShare()
+
+		crp := rtg.SampleCRP(crs)
+
+		elapsedRTGParty += runTimedParty(func() {
+			for _, pi := range P {
+				rtg.GenShare(pi.sk, galEl, crp, pi.rtgShare)
+			}
+		}, len(P))
+
+		elapsedRTGCloud += runTimed(func() {
+			for _, pi := range P {
+				rtg.AggregateShare(pi.rtgShare, rtgShareCombined, rtgShareCombined)
+			}
+			rtg.GenRotationKey(rtgShareCombined, crp, rotKeySet.Keys[galEl])
+		})
+	}
+	l.Printf("\tdone (cloud: %s, party %s)\n", elapsedRTGCloud, elapsedRTGParty)
 
 	return rotKeySet
 }
@@ -527,7 +489,7 @@ func rtgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Rotation
 func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.RelinearizationKey {
 	l := log.New(os.Stderr, "", 0)
 
-	l.Println("> RKG Phase")
+	l.Println("> RKG Phase(collective relinearization key)")
 
 	rkg := dckks.NewRKGProtocol(params) // Relineariation key generation
 	_, rkgCombined1, rkgCombined2 := rkg.AllocateShare()
@@ -574,7 +536,7 @@ func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKe
 
 	l := log.New(os.Stderr, "", 0)
 
-	l.Println("> CKG Phase")
+	l.Println("> CKG Phase(collective public key)")
 
 	ckg := dckks.NewCKGProtocol(params) // Public key generation
 	ckgCombined := ckg.AllocateShare()
