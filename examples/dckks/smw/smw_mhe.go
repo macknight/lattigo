@@ -22,6 +22,8 @@ import (
 // Check the result
 const float64EqualityThreshold = 1e-4
 
+var NGoRoutine int = 1 // Default number of Go routines
+
 func almostEqual(a, b float64) bool {
 	return math.Abs(a-b) <= float64EqualityThreshold
 }
@@ -81,6 +83,30 @@ var elapsedEvalCloud time.Duration
 var elapsedEvalParty time.Duration
 var pathFormat = "C:\\Users\\23304161\\source\\smw\\%s\\House_10sec_1month_%d.csv"
 
+func mergePartyCiphertexts(params ckks.Parameters, encInputs []*ckks.Ciphertext, evaluator ckks.Evaluator) *ckks.Ciphertext {
+	var tmpEncInputs []*ckks.Ciphertext
+	var sumGroupSize int
+	var lenEncInputs int //8 people
+	for len(encInputs) > 1 {
+		lenEncInputs = len(encInputs)
+		binaryStr := strconv.FormatInt(int64(lenEncInputs), 2) //1000
+		lenBinaryStr := len(binaryStr)                         //4
+		tmpEncInputs = make([]*ckks.Ciphertext, 0)
+		sumGroupSize = 0
+		for i := 0; i < lenBinaryStr; i++ {
+			if binaryStr[i] == 49 { // '1'
+				groupSize := int(math.Pow(2, float64(lenBinaryStr-i-1)))
+				//multiple ciphertexts->one ciphertext
+				tmpEncInputs = append(tmpEncInputs, evalPhase(params, NGoRoutine, encInputs[sumGroupSize:sumGroupSize+groupSize], evaluator))
+				sumGroupSize += groupSize
+			}
+		}
+		encInputs = tmpEncInputs
+	}
+
+	return encInputs[0]
+}
+
 //main start
 func main() {
 	// For more details about the PSI example see
@@ -111,8 +137,6 @@ func main() {
 	tkgen := ckks.NewKeyGenerator(params)
 	tsk, tpk := tkgen.GenKeyPair()
 
-	NGoRoutine := 1 // Default number of Go routines
-
 	folderName := "200Houses_10s_1month_highNE"
 	householdIDs := []int{1, 2, 3}
 	// Largest for n=8192: 512 parties
@@ -139,60 +163,51 @@ func main() {
 		elapsedRKGCloud+elapsedCKGCloud, elapsedRKGParty+elapsedCKGParty)
 
 	//generate ciphertexts
-	encInputs := encPhase(params, P, pk, encoder)
-	fmt.Println("level[]:")
-	for _, encInput := range encInputs {
-		fmt.Println("level:", encInput.Level())
-	}
-	var tmpEncInputs []*ckks.Ciphertext
-	var encRes *ckks.Ciphertext
-	var sumGroupSize int
-	var lenEncInputs int //8 people
+	encInputs, encInputsCopy := encPhase(params, P, pk, encoder)
+
 	//encInputs groups
-	for len(encInputs) > 1 {
-		lenEncInputs = len(encInputs)
-		binaryStr := strconv.FormatInt(int64(lenEncInputs), 2) //1000
-		lenBinaryStr := len(binaryStr)                         //4
-		tmpEncInputs = make([]*ckks.Ciphertext, 0)
-		sumGroupSize = 0
-		for i := 0; i < lenBinaryStr; i++ {
-			if binaryStr[i] == 49 { // '1'
-				groupSize := int(math.Pow(2, float64(lenBinaryStr-i-1)))
-				//multiple ciphertexts->one ciphertext
-				tmpEncInputs = append(tmpEncInputs, evalPhase(params, NGoRoutine, encInputs[sumGroupSize:sumGroupSize+groupSize], evaluator))
-				sumGroupSize += groupSize
-			}
-		}
-		encInputs = tmpEncInputs
-	}
-	encRes = encInputs[0]
-	fmt.Println("level encRes:", encRes.Level())
+	encRes := mergePartyCiphertexts(params, encInputs, evaluator)
 
 	// //calcuate the average of encOut
 	evaluator.InnerSumLog(encRes, 1, params.Slots(), encRes)
-	encRes.Scale *= float64(len(expRes))
+	encRes.Scale *= float64(len(expRes) * len(P))
 
-	//key switching!!!
-	//ciphertext->ciphertext, key switching to the target key pair tpk/tsk for further usage
-	encOut := pcksPhase(params, tpk, encRes, P) // ckks.ciphertext
-	encOut.Scale *= float64(len(P))
-	fmt.Println("level encOut:", encOut.Level())
+	//key switching========================================================================
+	//encRes->encOut, key switching to the target key pair tpk/tsk for further usage
+	encOut := pcksPhase(params, tpk, encRes, P) // cpk -> tpk
 
-	// Decrypt the result with the target secret key
-	l.Println("> Result:")
+	//calculate deviation
+	for i, _ := range encInputsCopy {
+		evaluator.Add(encInputsCopy[i], encRes, encInputsCopy[i]) // still use cpk
+		evaluator.Mul(encInputsCopy[i], encInputsCopy[i], encInputsCopy[i])
+		evaluator.Relinearize(encInputsCopy[i], encInputsCopy[i])
+		// evaluator.Power(encInputsCopy[i], int(2), encInputsCopy[i])//why power result is wrong?
+	}
+	encResDeviation := mergePartyCiphertexts(params, encInputsCopy, evaluator)
+	evaluator.InnerSumLog(encResDeviation, 1, params.Slots(), encResDeviation)
+	encResDeviation.Scale *= float64(len(expRes) * len(P))
+	//key switching========================================================================
+	//encResDeviation->encOutDeviation, key switching to the target key pair tpk/tsk for further usage
+	encOutDeviation := pcksPhase(params, tpk, encResDeviation, P) // cpk -> tpk
+
+	// Decrypt & Check the result
+	l.Println("> Decrypt & Result:")
 	decryptor := ckks.NewDecryptor(params, tsk) // decrypt using the target secret key
 	ptres := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
+	ptresDeviation := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 	elapsedDecParty := runTimed(func() {
 		decryptor.Decrypt(encOut, ptres) //ciphertext->plaintext
 	})
-
-	// Check the result
+	elapsedDecParty += runTimed(func() {
+		decryptor.Decrypt(encOutDeviation, ptresDeviation) //ciphertext->plaintext
+	})
 	res := encoder.Decode(ptres, params.LogSlots())
+	resDeviation := encoder.Decode(ptresDeviation, params.LogSlots())
+
 	//print result
 	visibleNum := 4
-
 	fmt.Println("> Parties:")
-	//different parties
+	//original input[j] of different parties
 	for i, pi := range P {
 		fmt.Printf("Party %3d(%d):\t\t", i, len(pi.input))
 		for j, element := range pi.input {
@@ -203,20 +218,47 @@ func main() {
 		fmt.Println()
 	}
 
-	fmt.Printf("> CKKS Average of parties(encOut,size_%d):\t\t", len(res))
+	//ckks results of average========================
+	fmt.Printf(">> CKKS Average of parties(encOut,size_%d):\t\t", len(res))
+	calculatedAverage := real(res[0])
 	for i, r := range res {
 		if i < visibleNum || (i > len(expRes)-visibleNum && i < len(expRes)) {
 			fmt.Printf("[%d]%.6f\t", i, real(r))
 		}
 	}
 	fmt.Println()
-
-	expSum := float64(0)
+	//expected results of average
+	expAverage := float64(0)
 	for _, expRe := range expRes {
-		expSum += expRe
+		expAverage += expRe
 	}
-	fmt.Printf("> Expected Average of elements of encOut: %.6f", expSum/float64(len(expRes)))
+	expAverage /= float64(len(expRes))
+	fmt.Printf("> Expected Average of elements of encOut: %.6f", expAverage)
 	fmt.Println()
+
+	//ckks results of deviation========================
+	fmt.Printf(">> CKKS Deviation of parties(encOutDeviation,size_%d):\t\t", len(resDeviation))
+	//extra value for deviation
+	delta := calculatedAverage * calculatedAverage * float64(len(resDeviation)-len(expRes)) / float64(len(expRes))
+	for i, rd := range resDeviation {
+		if i < visibleNum || (i > len(expRes)-visibleNum && i < len(expRes)+2) {
+			fmt.Printf("[%d]%.6f\t", i, real(rd)-delta)
+		}
+	}
+	fmt.Println()
+	//expected results of deviation
+	expDeviation := float64(0)
+	for _, pi := range P {
+		for _, v := range pi.input {
+			delta := v - calculatedAverage
+			expDeviation += delta * delta
+		}
+	}
+	expDeviation /= float64(len(expRes) * len(P))
+	fmt.Printf("> Expected Deviation of elements of encOut: %.6f", expDeviation)
+	fmt.Println()
+
+	//elapsedDuration
 	fmt.Printf("> Finished (total cloud: %s, total party: %s)\n",
 		elapsedCKGCloud+elapsedRKGCloud+elapsedEncryptCloud+elapsedEvalCloud+elapsedPCKSCloud,
 		elapsedCKGParty+elapsedRKGParty+elapsedEncryptParty+elapsedEvalParty+elapsedPCKSParty+elapsedDecParty)
@@ -226,13 +268,15 @@ func main() {
 //main end
 
 // encPhase to get []ciphertext
-func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ckks.Encoder) (encInputs []*ckks.Ciphertext) {
+func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ckks.Encoder) (encInputs, encInputsCopy []*ckks.Ciphertext) {
 
 	l := log.New(os.Stderr, "", 0)
 
 	encInputs = make([]*ckks.Ciphertext, len(P))
+	encInputsCopy = make([]*ckks.Ciphertext, len(P))
 	for i := range encInputs {
 		encInputs[i] = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
+		encInputsCopy[i] = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
 	}
 
 	// Each party encrypts its input vector
@@ -244,6 +288,16 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 		for i, pi := range P {
 			encoder.Encode(pi.input, pt, params.LogSlots())
 			encryptor.Encrypt(pt, encInputs[i])
+			//turn pi.input to negative
+			for j, _ := range pi.input {
+				pi.input[j] *= -1
+			}
+			encoder.Encode(pi.input, pt, params.LogSlots())
+			encryptor.Encrypt(pt, encInputsCopy[i])
+			////turn pi.input to positive
+			for j, _ := range pi.input {
+				pi.input[j] *= -1
+			}
 		}
 	}, len(P))
 
