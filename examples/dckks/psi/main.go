@@ -198,12 +198,12 @@ func evalPhase(params ckks.Parameters, NGoRoutine int, encInputs []*ckks.Ciphert
 
 	//(1)first option, result wrong
 	//x -> sssssx^2
-	// evaluator.Power(encRes, int(2), encRes) // wrong result, why?
+	evaluator.Power(encRes, int(2), encRes) // wrong result, why?
 
 	//(2)second option, result correct
 	//x -> x * x = x^2
-	evaluator.Mul(encRes, encRes, encRes)
-	evaluator.Relinearize(encRes, encRes)
+	// evaluator.Mul(encRes, encRes, encRes)
+	// evaluator.Relinearize(encRes, encRes)
 
 	return
 }
@@ -265,7 +265,7 @@ func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphert
 	}, len(P))
 
 	pcksCombined := pcks.AllocateShare(params.MaxLevel())
-	encOut = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
+	encOut = ckks.NewCiphertext(params, 1, encRes.Level(), params.DefaultScale())
 	elapsedPCKSCloud = runTimed(func() {
 		for _, pi := range P {
 			pcks.AggregateShare(pi.pcksShare, pcksCombined, pcksCombined)
