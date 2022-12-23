@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"math"
@@ -12,12 +13,33 @@ import (
 	"time"
 
 	"github.com/tuneinsight/lattigo/v3/ckks"
+	ckksAdvanced "github.com/tuneinsight/lattigo/v3/ckks/advanced"
 	"github.com/tuneinsight/lattigo/v3/dckks"
 	"github.com/tuneinsight/lattigo/v3/drlwe"
+	"github.com/tuneinsight/lattigo/v3/rgsw/lut"
 	"github.com/tuneinsight/lattigo/v3/ring"
 	"github.com/tuneinsight/lattigo/v3/rlwe"
 	"github.com/tuneinsight/lattigo/v3/utils"
 )
+
+// This example showcases how lookup tables can complement the CKKS scheme to compute non-linear functions
+// such as sign. The example starts by homomorphically decoding the CKKS ciphertext from the canonical embeding
+// to the coefficient embeding. It then evaluates the Look-Up-Table (LUT) on each coefficient and repacks the
+// outputs of each LUT in a single RLWE ciphertext. Finally, it homomorphically encodes the RLWE ciphertext back
+// to the canonical embeding of the CKKS scheme.
+
+// ==============================
+// Functions to evaluate with LUT
+// ==============================
+func sign(x float64) (y float64) {
+	if x > 0 {
+		return 1
+	} else if x < 0 {
+		return -1
+	} else {
+		return 0
+	}
+}
 
 // Check the result
 const float64EqualityThreshold = 1e-4
@@ -81,31 +103,8 @@ var elapsedPCKSParty time.Duration
 var elapsedEvalCloudCPU time.Duration
 var elapsedEvalCloud time.Duration
 var elapsedEvalParty time.Duration
+var elapsedDecParty time.Duration
 var pathFormat = "C:\\Users\\23304161\\source\\smw\\%s\\House_10sec_1month_%d.csv"
-
-func mergePartyCiphertexts(params ckks.Parameters, encInputs []*ckks.Ciphertext, evaluator ckks.Evaluator) *ckks.Ciphertext {
-	var tmpEncInputs []*ckks.Ciphertext
-	var sumGroupSize int
-	var lenEncInputs int //8 people
-	for len(encInputs) > 1 {
-		lenEncInputs = len(encInputs)
-		binaryStr := strconv.FormatInt(int64(lenEncInputs), 2) //1000
-		lenBinaryStr := len(binaryStr)                         //4
-		tmpEncInputs = make([]*ckks.Ciphertext, 0)
-		sumGroupSize = 0
-		for i := 0; i < lenBinaryStr; i++ {
-			if binaryStr[i] == 49 { // '1'
-				groupSize := int(math.Pow(2, float64(lenBinaryStr-i-1)))
-				//multiple ciphertexts->one ciphertext
-				tmpEncInputs = append(tmpEncInputs, evalPhase(params, NGoRoutine, encInputs[sumGroupSize:sumGroupSize+groupSize], evaluator))
-				sumGroupSize += groupSize
-			}
-		}
-		encInputs = tmpEncInputs
-	}
-
-	return encInputs[0]
-}
 
 //main start
 func main() {
@@ -144,18 +143,22 @@ func main() {
 	// Largest for n=8192: 512 parties
 
 	// Create each party, and allocate the memory for all the shares that the protocols will need
+	// create parties
 	P := genparties(params, folderName, householdIDs)
 
 	// Inputs & expected result, cleartext result
-	expRes := genInputs(params, P) //read CSV files, len(expRes) == size of rows
+	//read CSV files, len(expRes) == size of rows
+	// fulfill P's input property & fulfill expRes as comparison
+	genInputs(params, P)
 
 	// 1) Collective public key generation
 	pk := ckgphase(params, crs, P)
 
-	// 2) Collective relinearization key generation
+	// 2) Collective relinearization key generation & rotation key generation
 	rlk := rkgphase(params, crs, P)
 	rotk := rtkgphase(params, crs, P)
 
+	// 3) Create evaluator
 	evaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: rlk, Rtks: rotk})
 
 	l.Printf("\tdone (cloud: %s, party: %s)\n",
@@ -164,102 +167,36 @@ func main() {
 		elapsedRKGCloud+elapsedCKGCloud, elapsedRKGParty+elapsedCKGParty)
 
 	//generate ciphertexts
-	encInputs, encInputsCopy := encPhase(params, P, pk, encoder)
-
-	//encInputs groups
-	encRes := mergePartyCiphertexts(params, encInputs, evaluator)
-
-	// //calcuate the average of encOut
-	evaluator.InnerSumLog(encRes, 1, params.Slots(), encRes)
-	encRes.Scale *= float64(len(expRes) * len(P))
-
-	//key switching========================================================================
-	//encRes->encOut, key switching to the target key pair tpk/tsk for further usage
-	encOut := pcksPhase(params, tpk, encRes, P) // cpk -> tpk
-
-	//calculate deviation
-	for i, _ := range encInputsCopy {
-		evaluator.Add(encInputsCopy[i], encRes, encInputsCopy[i]) // still use cpk
-		evaluator.Mul(encInputsCopy[i], encInputsCopy[i], encInputsCopy[i])
-		evaluator.Relinearize(encInputsCopy[i], encInputsCopy[i])
-		// evaluator.Power(encInputsCopy[i], int(2), encInputsCopy[i])//why power result is wrong?
+	//encInputs is positive
+	//encInputsCopy is negative
+	encInputs, _ := encPhase(params, P, pk, encoder)
+	encOuts := make([]*ckks.Ciphertext, 0) // here length should be 0, otherwise append will not right.
+	// delete encRes
+	// calcuate the sum of each encInput
+	for _, encInput := range encInputs {
+		evaluator.InnerSumLog(encInput, 1, params.Slots(), encInput)   // add sum
+		encOuts = append(encOuts, pcksPhase(params, tpk, encInput, P)) //switch-key and include to encOuts
 	}
-	encResDeviation := mergePartyCiphertexts(params, encInputsCopy, evaluator)
-	evaluator.InnerSumLog(encResDeviation, 1, params.Slots(), encResDeviation)
-	encResDeviation.Scale *= float64(len(expRes) * len(P))
-	//key switching========================================================================
-	//encResDeviation->encOutDeviation, key switching to the target key pair tpk/tsk for further usage
-	encOutDeviation := pcksPhase(params, tpk, encResDeviation, P) // cpk -> tpk
 
 	// Decrypt & Check the result
 	l.Println("> Decrypt & Result:")
 	decryptor := ckks.NewDecryptor(params, tsk) // decrypt using the target secret key
-	ptresx := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
-	ptresDeviation := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
-	elapsedDecParty := runTimed(func() {
-		decryptor.Decrypt(encOut, ptres) //ciphertext->plaintext
-	})
-	elapsedDecParty += runTimed(func() {
-		decryptor.Decrypt(encOutDeviation, ptresDeviation) //ciphertext->plaintext
-	})
+	ptres := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
+	for i, encOut := range encOuts {
+		elapsedDecParty += runTimed(func() {
+			decryptor.Decrypt(encOut, ptres) //ciphertext->plaintext
+		})
+		res := encoder.Decode(ptres, params.LogSlots())
+		calculatedSum := real(res[0])
+		fmt.Printf("> Calculated Sum of elements of encOuts[%d]: %.6f", i, calculatedSum)
+		expSum := float64(0)
+		for _, element := range P[i].input {
+			expSum += element
+		}
+		fmt.Printf("> Expected Sum of elements of encOuts[%d]: %.6f", i, expSum)
+	}
+
 	l.Printf("\tdone (party: %s)\n", elapsedDecParty)
-
-	resx := encoder.Decode(ptres, params.LogSlots())
-	resDeviation := encoder.Decode(ptresDeviation, params.LogSlots())
-
-	//print result
-	visibleNum := 4
-	fmt.Println("> Parties:")
-	//original input[j] of different parties
-	for i, pi := range P {
-		fmt.Printf("Party %3d(%d):\t\t", i, len(pi.input))
-		for j, element := range pi.input {
-			if j < visibleNum || (j > len(expRes)-visibleNum && j < len(expRes)) {
-				fmt.Printf("[%d]%.6f\t", j, element)
-			}
-		}
-		fmt.Println()
-	}
-
-	//ckks results of average========================
-	fmt.Printf(">> CKKS Average of parties(encOut,size_%d):\t\t", len(res))
-	calculatedAverage := real(res[0])
-	for i, r := range res {
-		if i < visibleNum || (i > len(expRes)-visibleNum && i < len(expRes)) {
-			fmt.Printf("[%d]%.6f\t", i, real(r))
-		}
-	}
-	fmt.Println()
-	//expected results of average
-	expAverage := float64(0)
-	for _, expRe := range expRes {
-		expAverage += expRe
-	}
-	expAverage /= float64(len(expRes))
-	fmt.Printf("> Expected Average of elements of encOut: %.6f", expAverage)
-	fmt.Println()
-
-	//ckks results of deviation========================
-	fmt.Printf(">> CKKS Deviation of parties(encOutDeviation,size_%d):\t\t", len(resDeviation))
-	//extra value for deviation
-	delta := calculatedAverage * calculatedAverage * float64(len(resDeviation)-len(expRes)) / float64(len(expRes))
-	for i, rd := range resDeviation {
-		if i < visibleNum || (i > len(expRes)-visibleNum && i < len(expRes)+2) {
-			fmt.Printf("[%d]%.6f\t", i, real(rd)-delta)
-		}
-	}
-	fmt.Println()
-	//expected results of deviation
-	expDeviation := float64(0)
-	for _, pi := range P {
-		for _, v := range pi.input {
-			delta := v - calculatedAverage
-			expDeviation += delta * delta
-		}
-	}
-	expDeviation /= float64(len(expRes) * len(P))
-	fmt.Printf("> Expected Deviation of elements of encOut: %.6f", expDeviation)
-	fmt.Println()
 
 	//elapsedDuration
 	fmt.Printf("> Finished (total cloud: %s, total party: %s)\n",
@@ -623,4 +560,226 @@ func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKe
 	l.Printf("\tdone (cloud: %s, party: %s)\n", elapsedCKGCloud, elapsedCKGParty)
 
 	return pk
+}
+
+func test_lut() {
+
+	var err error
+
+	// Base ring degree
+	LogN := 12
+
+	// Q modulus Q
+	Q := []uint64{0x800004001, 0x40002001} // 65.0000116961637 bits
+
+	// P modulus P
+	P := []uint64{0x4000026001} // 38.00000081692261 bits
+
+	flagShort := flag.Bool("short", false, "runs the example with insecure parameters for fast testing")
+	flag.Parse()
+
+	if *flagShort {
+		LogN = 6
+	}
+
+	// Starting RLWE params, size of these params
+	// determine the complexity of the LUT:
+	// each LUT takes N RGSW ciphertext-ciphetext mul.
+	// LogN = 12 & LogQP = ~103 -> >128-bit secure.
+	var paramsN12 ckks.Parameters
+	if paramsN12, err = ckks.NewParametersFromLiteral(ckks.ParametersLiteral{
+		LogN: LogN, //logN=12 => N=4096
+		Q:    Q,    //Q := []uint64{0x800004001, 0x40002001}
+		P:    P,    //P := []uint64{0x4000026001}
+		//then Q*P =>	34359754753*1073750017*274878062593=10141292761039441820029989076993
+		LogSlots:     4,
+		DefaultScale: 1 << 32,
+	}); err != nil {
+		panic(err)
+	}
+
+	// Params for Key-switching N12 to N11.
+	// LogN = 12 & LogQP = ~54 -> >>>128-bit secure.
+	var paramsN12ToN11 ckks.Parameters
+	if paramsN12ToN11, err = ckks.NewParametersFromLiteral(ckks.ParametersLiteral{
+		LogN:     LogN,  //12
+		Q:        Q[:1], //[]uint64{0x800004001}
+		P:        []uint64{0x42001},
+		Pow2Base: 16,
+	}); err != nil {
+		panic(err)
+	}
+
+	// LUT RLWE params, N of these params determine
+	// the LUT poly and therefore precision.
+	// LogN = 11 & LogQP = ~54 -> 128-bit secure.
+	var paramsN11 ckks.Parameters
+	if paramsN11, err = ckks.NewParametersFromLiteral(ckks.ParametersLiteral{
+		LogN:     LogN - 1, //11
+		Q:        Q[:1],    //[]uint64{0x800004001}
+		P:        []uint64{0x42001},
+		Pow2Base: 12,
+	}); err != nil {
+		panic(err)
+	}
+
+	// LUT interval
+	a, b := -8.0, 8.0
+
+	// Rescale inputs during Homomorphic Decoding by the normalization of the
+	// LUT inputs and change of scale to ensure that upperbound on the homomorphic
+	// decryption of LWE during the LUT evaluation X^{dec(lwe)} is smaller than N
+	// to avoid negacyclic wrapping of X^{dec(lwe)}.
+	diffScale := paramsN11.QiFloat64(0) / (4.0 * paramsN12.DefaultScale()) //1 << 34
+
+	fmt.Printf("diffScale=%7.4f\n", diffScale) //2.0
+
+	normalization := 2.0 / (b - a) // all inputs are normalized before the LUT evaluation. 0.125
+
+	fmt.Printf("normalization=%7.4f\n", normalization) //0.125
+
+	//normalization * diffScale => 0.25 => 1/4
+	fmt.Printf("normalization * diffScale=%7.4f\n", normalization*diffScale) //0.25 => 1/4
+
+	// SlotsToCoeffsParameters homomorphic encoding parameters
+	var SlotsToCoeffsParameters = ckksAdvanced.EncodingMatrixLiteral{
+		LogN:                paramsN12.LogN(),          //12
+		LogSlots:            paramsN12.LogSlots(),      //4, 2^4=16
+		Scaling:             normalization * diffScale, //0.25
+		LinearTransformType: ckksAdvanced.SlotsToCoeffs,
+		RepackImag2Real:     false,
+		LevelStart:          1,     // starting level
+		BSGSRatio:           4.0,   // ratio between n1/n2 for n1*n2 = slots
+		BitReversed:         false, // bit-reversed input
+		ScalingFactor: [][]float64{ // Decomposition level of the encoding matrix
+			{paramsN12.QiFloat64(1)}, // Scale of the decoding matrix
+		},
+	}
+
+	// CoeffsToSlotsParameters homomorphic decoding parameters
+	var CoeffsToSlotsParameters = ckksAdvanced.EncodingMatrixLiteral{
+		LogN:                paramsN12.LogN(),               //12
+		LogSlots:            paramsN12.LogSlots(),           //4, 2^4=16
+		Scaling:             1 / float64(paramsN12.Slots()), //1/16 = 0.0625
+		LinearTransformType: ckksAdvanced.CoeffsToSlots,
+		RepackImag2Real:     false,
+		LevelStart:          1,     // starting level
+		BSGSRatio:           4.0,   // ratio between n1/n2 for n1*n2 = slots
+		BitReversed:         false, // bit-reversed input
+		ScalingFactor: [][]float64{ // Decomposition level of the encoding matrix
+			{paramsN12.QiFloat64(1)}, // Scale of the encoding matrix
+		},
+	}
+
+	fmt.Printf("Generating LUT... ")
+	now := time.Now()
+	// Generate LUT, provide function, outputscale, ring and interval.
+	LUTPoly := lut.InitLUT(sign, paramsN12.DefaultScale(), paramsN12.RingQ(), a, b) //look up table
+	fmt.Printf("Done (%s)\n", time.Since(now))
+
+	// Index of the LUT poly and repacking after evaluating the LUT.
+	lutPolyMap := make(map[int]*ring.Poly)            // Which slot to evaluate on the LUT
+	repackIndex := make(map[int]int)                  // Where to repack slots after the LUT
+	gapN11 := paramsN11.N() / (2 * paramsN12.Slots()) //2^11 / 2^5 = 2^6 = 64
+	gapN12 := paramsN12.N() / (2 * paramsN12.Slots()) //2^12 / 2^5 = 2^7 = 128
+
+	for i := 0; i < paramsN12.Slots(); i++ { //i = 0; i<16; i++
+		lutPolyMap[i*gapN11] = LUTPoly     //[0, 64, 128,..., 960] = LUTPoly
+		repackIndex[i*gapN11] = i * gapN12 //[0, 64, 128,..., 960] = 0, 128,..., 1920
+	}
+
+	kgenN12 := ckks.NewKeyGenerator(paramsN12)
+	skN12 := kgenN12.GenSecretKey()
+	encoderN12 := ckks.NewEncoder(paramsN12)
+	encryptorN12 := ckks.NewEncryptor(paramsN12, skN12)
+	decryptorN12 := ckks.NewDecryptor(paramsN12, skN12)
+
+	kgenN11 := ckks.NewKeyGenerator(paramsN11)
+	skN11 := kgenN11.GenSecretKey()
+	//decryptorN11 := ckks.NewDecryptor(paramsN11, skN11)
+	//encoderN11 := ckks.NewEncoder(paramsN11)
+
+	// Switchingkey RLWEN12 -> RLWEN11
+	swkN12ToN11 := ckks.NewKeyGenerator(paramsN12ToN11).GenSwitchingKey(skN12, skN11)
+
+	fmt.Printf("Gen SlotsToCoeffs Matrices... ")
+	now = time.Now()
+	SlotsToCoeffsMatrix := ckksAdvanced.NewHomomorphicEncodingMatrixFromLiteral(SlotsToCoeffsParameters, encoderN12)
+	CoeffsToSlotsMatrix := ckksAdvanced.NewHomomorphicEncodingMatrixFromLiteral(CoeffsToSlotsParameters, encoderN12)
+	fmt.Printf("Done (%s)\n", time.Since(now))
+
+	// Rotation Keys
+	rotations := []int{}
+	for i := 1; i < paramsN12.N(); i <<= 1 { //i=1;i<4096;i=2*i  => add 1,2,4,8,2048;total 12 iterations
+		rotations = append(rotations, i)
+	}
+
+	rotations = append(rotations, SlotsToCoeffsParameters.Rotations()...)
+	rotations = append(rotations, CoeffsToSlotsParameters.Rotations()...)
+
+	rotKey := kgenN12.GenRotationKeysForRotations(rotations, true, skN12)
+
+	// LUT Evaluator
+	evalLUT := lut.NewEvaluator(paramsN12.Parameters, paramsN11.Parameters, rotKey)
+
+	// CKKS Evaluator
+	evalCKKS := ckksAdvanced.NewEvaluator(paramsN12, rlwe.EvaluationKey{Rlk: nil, Rtks: rotKey})
+	evalCKKSN12ToN11 := ckks.NewEvaluator(paramsN12ToN11, rlwe.EvaluationKey{})
+
+	fmt.Printf("Encrypting bits of skLWE in RGSW... ")
+	now = time.Now()
+	LUTKEY := lut.GenEvaluationKey(paramsN12.Parameters, skN12, paramsN11.Parameters, skN11) // Generate RGSW(sk_i) for all coefficients of sk
+	fmt.Printf("Done (%s)\n", time.Since(now))
+
+	// Generates the starting plaintext values.
+	interval := (b - a) / float64(paramsN12.Slots()) // 16/16 = 1
+	values := make([]float64, paramsN12.Slots())     // [16] float64
+	for i := 0; i < paramsN12.Slots(); i++ {
+		values[i] = a + float64(i)*interval
+		// fmt.Printf("Value[%d]=%7.4f\n", i, values[i])
+		//Value[0]=-8.0000;Value[1]=-7.0000;Value[2]=-6.0000;Value[3]=-5.0000;Value[4]=-4.0000;Value[5]=-3.0000;Value[6]=-2.0000;Value[7]=-1.0000;Value[8]= 0.0000;Value[9]= 1.0000;Value[10]= 2.0000;Value[11]= 3.0000;Value[12]= 4.0000;Value[13]= 5.0000;Value[14]= 6.0000;Value[15]= 7.0000
+	}
+
+	pt := ckks.NewPlaintext(paramsN12, paramsN12.MaxLevel(), paramsN12.DefaultScale())
+	encoderN12.EncodeSlots(values, pt, paramsN12.LogSlots()) //encode
+	ctN12 := encryptorN12.EncryptNew(pt)                     //encrypt values[] into ctN12
+
+	fmt.Printf("Homomorphic Decoding... ")
+	now = time.Now()
+	// Homomorphic Decoding: [(a+bi), (c+di)] -> [a, c, b, d]
+	ctN12 = evalCKKS.SlotsToCoeffsNew(ctN12, nil, SlotsToCoeffsMatrix)
+	ctN12.Scale = paramsN11.QiFloat64(0) / 4.0
+
+	// Key-Switch from LogN = 12 to LogN = 10
+	evalCKKS.DropLevel(ctN12, ctN12.Level())                    // drop to LUT level
+	ctTmp := evalCKKSN12ToN11.SwitchKeysNew(ctN12, swkN12ToN11) // key-switch to LWE degree
+	ctN11 := ckks.NewCiphertext(paramsN11, 1, paramsN11.MaxLevel(), ctTmp.Scale)
+	// prepare ctN11 by ctTmp
+	rlwe.SwitchCiphertextRingDegreeNTT(ctTmp.Ciphertext, paramsN11.RingQ(), paramsN12.RingQ(), ctN11.Ciphertext)
+	fmt.Printf("Done (%s)\n", time.Since(now))
+
+	//for i, v := range encoderN11.DecodeCoeffs(decryptorN11.DecryptNew(ctN11)){
+	//	fmt.Printf("%3d: %7.4f\n", i, v)
+	//}
+
+	fmt.Printf("Evaluating LUT... ")
+	now = time.Now()
+	// Extracts & EvalLUT(LWEs, indexLUT) on the fly -> Repack(LWEs, indexRepack) -> RLWE
+	ctN12.Ciphertext = evalLUT.EvaluateAndRepack(ctN11.Ciphertext, lutPolyMap, repackIndex, LUTKEY)
+	ctN12.Scale = paramsN12.DefaultScale()
+	fmt.Printf("Done (%s)\n", time.Since(now))
+
+	// for i, v := range encoderN12.DecodeCoeffs(decryptorN12.DecryptNew(ctN12)) {
+	// 	fmt.Printf("%3d: %7.4f\n", i, v)
+	// }
+
+	fmt.Printf("Homomorphic Encoding... ")
+	now = time.Now()
+	// Homomorphic Encoding: [LUT(a), LUT(c), LUT(b), LUT(d)] -> [(LUT(a)+LUT(b)i), (LUT(c)+LUT(d)i)]
+	ctN12, _ = evalCKKS.CoeffsToSlotsNew(ctN12, CoeffsToSlotsMatrix)
+	fmt.Printf("Done (%s)\n", time.Since(now))
+
+	for i, v := range encoderN12.Decode(decryptorN12.DecryptNew(ctN12), paramsN12.LogSlots()) {
+		fmt.Printf("%7.4f -> %7.4f\n", values[i], v)
+	}
 }
