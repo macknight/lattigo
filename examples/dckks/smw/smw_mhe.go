@@ -194,7 +194,7 @@ func main() {
 	// Decrypt & Check the result
 	l.Println("> Decrypt & Result:")
 	decryptor := ckks.NewDecryptor(params, tsk) // decrypt using the target secret key
-	ptresx := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
+	ptres := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 	ptresDeviation := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 	elapsedDecParty := runTimed(func() {
 		decryptor.Decrypt(encOut, ptres) //ciphertext->plaintext
@@ -204,7 +204,7 @@ func main() {
 	})
 	l.Printf("\tdone (party: %s)\n", elapsedDecParty)
 
-	resx := encoder.Decode(ptres, params.LogSlots())
+	res := encoder.Decode(ptres, params.LogSlots())
 	resDeviation := encoder.Decode(ptresDeviation, params.LogSlots())
 
 	//print result
