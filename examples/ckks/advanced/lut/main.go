@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"time"
 
@@ -22,9 +21,9 @@ import (
 // Functions to evaluate with LUT
 // ==============================
 func sign(x float64) (y float64) {
-	if x > 0 {
+	if x > 3.22 {
 		return 1
-	} else if x < 0 {
+	} else if x < -3.22 {
 		return -1
 	} else {
 		return 0
@@ -32,24 +31,13 @@ func sign(x float64) (y float64) {
 }
 
 func main() {
-
 	var err error
 
 	// Base ring degree
 	LogN := 12
 
-	// Q modulus Q
-	Q := []uint64{0x800004001, 0x40002001} // 65.0000116961637 bits
-
-	// P modulus P
-	P := []uint64{0x4000026001} // 38.00000081692261 bits
-
-	flagShort := flag.Bool("short", false, "runs the example with insecure parameters for fast testing")
-	flag.Parse()
-
-	if *flagShort {
-		LogN = 6
-	}
+	LogQ := []int{35, 30}
+	LogP := []int{30}
 
 	// Starting RLWE params, size of these params
 	// determine the complexity of the LUT:
@@ -58,8 +46,8 @@ func main() {
 	var paramsN12 ckks.Parameters
 	if paramsN12, err = ckks.NewParametersFromLiteral(ckks.ParametersLiteral{
 		LogN:         LogN,
-		Q:            Q,
-		P:            P,
+		LogQ:         LogQ,
+		LogP:         LogP,
 		LogSlots:     4,
 		DefaultScale: 1 << 32,
 	}); err != nil {
@@ -70,10 +58,11 @@ func main() {
 	// LogN = 12 & LogQP = ~54 -> >>>128-bit secure.
 	var paramsN12ToN11 ckks.Parameters
 	if paramsN12ToN11, err = ckks.NewParametersFromLiteral(ckks.ParametersLiteral{
-		LogN:     LogN,
-		Q:        Q[:1],
-		P:        []uint64{0x42001},
-		Pow2Base: 16,
+		LogN:         LogN,
+		LogQ:         LogQ[:1],
+		LogP:         []int{20},
+		Pow2Base:     16,
+		DefaultScale: 1.0,
 	}); err != nil {
 		panic(err)
 	}
@@ -83,14 +72,14 @@ func main() {
 	// LogN = 11 & LogQP = ~54 -> 128-bit secure.
 	var paramsN11 ckks.Parameters
 	if paramsN11, err = ckks.NewParametersFromLiteral(ckks.ParametersLiteral{
-		LogN:     LogN - 1,
-		Q:        Q[:1],
-		P:        []uint64{0x42001},
-		Pow2Base: 12,
+		LogN:         LogN - 1,
+		LogQ:         LogQ[:1],
+		LogP:         []int{20},
+		Pow2Base:     12,
+		DefaultScale: 1.0,
 	}); err != nil {
 		panic(err)
 	}
-
 	// LUT interval
 	a, b := -8.0, 8.0
 
@@ -195,7 +184,7 @@ func main() {
 	interval := (b - a) / float64(paramsN12.Slots())
 	values := make([]float64, paramsN12.Slots())
 	for i := 0; i < paramsN12.Slots(); i++ {
-		values[i] = a + float64(i)*interval
+		values[i] = a + float64(i)*interval + 0.21
 	}
 
 	pt := ckks.NewPlaintext(paramsN12, paramsN12.MaxLevel(), paramsN12.DefaultScale())
@@ -236,6 +225,7 @@ func main() {
 	ctN12, _ = evalCKKS.CoeffsToSlotsNew(ctN12, CoeffsToSlotsMatrix)
 	fmt.Printf("Done (%s)\n", time.Since(now))
 
+	//print results
 	for i, v := range encoderN12.Decode(decryptorN12.DecryptNew(ctN12), paramsN12.LogSlots()) {
 		fmt.Printf("%7.4f -> %7.4f\n", values[i], v)
 	}
