@@ -135,6 +135,7 @@ func main() {
 	elapsedDecParty := runTimed(func() {
 		decryptor.Decrypt(encOut, ptres)
 	})
+	l.Printf("\tDecrypt (time: %s)\n", elapsedDecParty)
 
 	// Check the result
 	res := encoder.DecodeUintNew(ptres)
