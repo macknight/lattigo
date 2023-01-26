@@ -166,7 +166,7 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string) {
 	encInputsAverage, encInputsNegative, encInputsSummation := encPhase(params, P, pk, encoder)
 
 	encSummationOuts := make([]*ckks.Ciphertext, 0)
-	encAverageOuts := make([]*ckks.Ciphertext, 0)
+	// encAverageOuts := make([]*ckks.Ciphertext, 0)
 	encDeviationOuts := make([]*ckks.Ciphertext, 0)
 
 	// summation
@@ -182,7 +182,7 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string) {
 		evaluator.InnerSumLog(encInputAverage, 1, params.Slots(), encInputAverage)
 		encInputAverage.Scale *= float64(globalPartyRows) //each element contains the
 
-		encAverageOuts = append(encAverageOuts, pcksPhase(params, tpk, encInputAverage, P)) // cpk -> tpk, key switching
+		// encAverageOuts = append(encAverageOuts, pcksPhase(params, tpk, encInputAverage, P)) // cpk -> tpk, key switching
 
 		elapsedAddition += runTimed(func() {
 			evaluator.Add(encInputsNegative[i], encInputAverage, encInputsNegative[i])
@@ -217,9 +217,9 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string) {
 	}
 
 	// print deviation
-	for i, _ := range encAverageOuts {
+	for i, _ := range encDeviationOuts {
 		elapsedDecParty += runTimed(func() {
-			decryptor.Decrypt(encAverageOuts[i], ptres)            //ciphertext->plaintext
+			// decryptor.Decrypt(encAverageOuts[i], ptres)            //ciphertext->plaintext
 			decryptor.Decrypt(encDeviationOuts[i], ptresDeviation) //ciphertext->plaintext
 		})
 
