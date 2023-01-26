@@ -77,15 +77,53 @@ var elapsedRTGCloud time.Duration
 var elapsedRTGParty time.Duration
 var elapsedPCKSCloud time.Duration
 var elapsedPCKSParty time.Duration
-var elapsedEvalCloudCPU time.Duration
 var elapsedEvalCloud time.Duration
 var elapsedEvalParty time.Duration
 var elapsedDecParty time.Duration
+
+var elapsedAddition time.Duration
+var elapsedMultiplication time.Duration
+var elapsedRotation time.Duration
+
 var pathFormat = "C:\\Users\\23304161\\source\\smw\\%s\\House_10sec_1month_%d.csv"
 
-//main start
 func main() {
 	start := time.Now()
+
+	loop := 1
+	maximumLenPartyRows := 8640
+	folderName := "200Houses_10s_1month_highVD"
+
+	householdIDs := []int{}
+	minHouseholdID := 1
+	maxHouseholdID := 200
+
+	for householdID := minHouseholdID; householdID <= maxHouseholdID; householdID++ {
+		householdIDs = append(householdIDs, householdID)
+	}
+
+	for i := 0; i < loop; i++ {
+		process(householdIDs, maximumLenPartyRows, folderName)
+	}
+	fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+	fmt.Printf("*****Amortized CKG Time: %s(cloud); %s(party)\n", time.Duration(elapsedCKGCloud.Nanoseconds()/int64(loop)), time.Duration(elapsedCKGParty.Nanoseconds()/int64(loop)))
+	fmt.Printf("*****Amortized RKG Time: %s(cloud); %s(party)\n", time.Duration(elapsedRKGCloud.Nanoseconds()/int64(loop)), time.Duration(elapsedRKGParty.Nanoseconds()/int64(loop)))
+	fmt.Printf("*****Amortized RTG Time: %s(cloud); %s(party)\n", time.Duration(elapsedRTGCloud.Nanoseconds()/int64(loop)), time.Duration(elapsedRTGParty.Nanoseconds()/int64(loop)))
+
+	fmt.Printf("*****Amortized Encrypt Time: %s\n", time.Duration(elapsedEncryptParty.Nanoseconds()/int64(loop)))
+	fmt.Printf("*****Amortized Decrypt Time: %s\n", time.Duration(elapsedDecParty.Nanoseconds()/int64(3*len(householdIDs)*loop)))
+
+	fmt.Printf("*****Amortized Ciphertext Addition Time: %s\n", time.Duration(elapsedAddition.Nanoseconds()/int64(len(householdIDs)*loop)))
+	fmt.Printf("*****Amortized Ciphertext Multiplication Time: %s\n", time.Duration(elapsedMultiplication.Nanoseconds()/int64(len(householdIDs)*loop)))
+	fmt.Printf("*****Amortized Ciphertext Rotation Time: %s\n", time.Duration(elapsedRotation.Nanoseconds()/int64(len(householdIDs)*14*loop))) // 14 = len(params.GaloisElementsForRowInnerSum())
+
+	fmt.Printf("Main() Done in %s \n", time.Since(start))
+}
+
+//main start
+func process(householdIDs []int, maximumLenPartyRows int, folderName string) {
+
 	// For more details about the PSI example see
 	//     Multiparty Homomorphic Encryption: From Theory to Practice (<https://eprint.iacr.org/2020/304>)
 	l := log.New(os.Stderr, "", 0)
@@ -94,12 +132,11 @@ func main() {
 	// arg1: number of parties
 	// arg2: number of Go routines
 	var err error
-	// Creating encryption parameters from a default params with logN=14, logQP=438 with a plaintext modulus T=65537
 	paramsDef := ckks.PN14QP438CI
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
-	folderName := "200Houses_10s_1month_highNE"
-	householdIDs := []int{6} // using suffix IDs of the csv files
+
+	// householdIDs := []int{6, 7, 8} // using suffix IDs of the csv files
 	// Largest for n=8192: 512 parties
 
 	crs, err := utils.NewKeyedPRNG([]byte{'l', 'a', 't', 't', 'i', 'g', 'o'})
@@ -113,7 +150,7 @@ func main() {
 	P := genparties(params, folderName, householdIDs)
 
 	// Inputs & expected result, cleartext result
-	globalPartyRows, expAverage, expDeviation := genInputs(params, P) //globalPartyRows rows
+	globalPartyRows, expSummation, expAverage, expDeviation := genInputs(params, P, maximumLenPartyRows) //globalPartyRows rows
 
 	// 1) Collective public key generation
 	pk := ckgphase(params, crs, P)
@@ -126,53 +163,63 @@ func main() {
 	evaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: rlk, Rtks: rotk})
 
 	//generate ciphertexts
-	//encInputsCopy2 for summation
-	//encInputs, encInputsCopy for deviation
-	encInputs, encInputsCopy, encInputsCopy2 := encPhase(params, P, pk, encoder)
+	encInputsAverage, encInputsNegative, encInputsSummation := encPhase(params, P, pk, encoder)
 
-	encOuts := make([]*ckks.Ciphertext, 0)
+	encSummationOuts := make([]*ckks.Ciphertext, 0)
+	encAverageOuts := make([]*ckks.Ciphertext, 0)
 	encDeviationOuts := make([]*ckks.Ciphertext, 0)
 
+	// summation
+	for _, encInputSummation := range encInputsSummation {
+		elapsedRotation += runTimed(func() {
+			evaluator.InnerSumLog(encInputSummation, 1, params.Slots(), encInputSummation)
+		})
+		encSummationOuts = append(encSummationOuts, pcksPhase(params, tpk, encInputSummation, P))
+	}
+
 	// deviation
-	for i, encInput := range encInputs {
-		evaluator.InnerSumLog(encInput, 1, params.Slots(), encInput)
-		encInput.Scale *= float64(globalPartyRows) //each element contains the
+	for i, encInputAverage := range encInputsAverage {
+		evaluator.InnerSumLog(encInputAverage, 1, params.Slots(), encInputAverage)
+		encInputAverage.Scale *= float64(globalPartyRows) //each element contains the
 
-		encOuts = append(encOuts, pcksPhase(params, tpk, encInput, P)) // cpk -> tpk, key switching
+		encAverageOuts = append(encAverageOuts, pcksPhase(params, tpk, encInputAverage, P)) // cpk -> tpk, key switching
 
-		evaluator.Add(encInputsCopy[i], encInput, encInputsCopy[i])
-		evaluator.MulRelin(encInputsCopy[i], encInputsCopy[i], encInputsCopy[i])
+		elapsedAddition += runTimed(func() {
+			evaluator.Add(encInputsNegative[i], encInputAverage, encInputsNegative[i])
+		})
+		elapsedMultiplication += runTimed(func() {
+			evaluator.MulRelin(encInputsNegative[i], encInputsNegative[i], encInputsNegative[i])
+		})
 
-		evaluator.InnerSumLog(encInputsCopy[i], 1, params.Slots(), encInputsCopy[i])
-		encInputsCopy[i].Scale *= float64(globalPartyRows)
+		evaluator.InnerSumLog(encInputsNegative[i], 1, params.Slots(), encInputsNegative[i])
+		encInputsNegative[i].Scale *= float64(globalPartyRows)
 
-		encDeviationOuts = append(encDeviationOuts, pcksPhase(params, tpk, encInputsCopy[i], P)) // cpk -> tpk
+		encDeviationOuts = append(encDeviationOuts, pcksPhase(params, tpk, encInputsNegative[i], P)) // cpk -> tpk
 	}
 
 	// Decrypt & Check the result
 	l.Println("> Decrypt & Result:>>>>>>>>>>>>>")
+	decryptor := ckks.NewDecryptor(params, tsk)
 
-	decryptor := ckks.NewDecryptor(params, tsk) // decrypt using the target secret key
 	ptres := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 	ptresDeviation := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 	ptresSummation := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 
-	// summation
-	for i, encInputCopy2 := range encInputsCopy2 {
-		evaluator.InnerSumLog(encInputCopy2, 1, params.Slots(), encInputCopy2)
-		encSummationOut := pcksPhase(params, tpk, encInputCopy2, P) //*若无此行，则结果错误
+	// print summation
+	for i, _ := range encSummationOuts {
 		elapsedDecParty += runTimed(func() {
-			decryptor.Decrypt(encSummationOut, ptresSummation) //ciphertext->plaintext
+			decryptor.Decrypt(encSummationOuts[i], ptresSummation) //ciphertext->plaintext
 		})
 		resSummation := encoder.Decode(ptresSummation, params.LogSlots()) //plaintext->complex numbers
 		fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0]))
+		fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
 		fmt.Println()
 	}
 
-	// deviation
-	for i, _ := range encOuts {
+	// print deviation
+	for i, _ := range encAverageOuts {
 		elapsedDecParty += runTimed(func() {
-			decryptor.Decrypt(encOuts[i], ptres)                   //ciphertext->plaintext
+			decryptor.Decrypt(encAverageOuts[i], ptres)            //ciphertext->plaintext
 			decryptor.Decrypt(encDeviationOuts[i], ptresDeviation) //ciphertext->plaintext
 		})
 
@@ -193,7 +240,8 @@ func main() {
 		fmt.Println()
 	}
 
-	l.Printf("\tDecrypt Time: done (party: %s)\n", time.Duration(elapsedDecParty.Nanoseconds()/int64(3*len(encInputsCopy2))))
+	fmt.Printf("\tDecrypt Time: done (party: %s)\n", time.Duration(elapsedDecParty.Nanoseconds()/int64(3*len(P))))
+	fmt.Println()
 
 	//print result
 	visibleNum := 4
@@ -214,25 +262,23 @@ func main() {
 		elapsedCKGCloud+elapsedRKGCloud+elapsedRTGCloud+elapsedEncryptCloud+elapsedEvalCloud+elapsedPCKSCloud,
 		elapsedCKGParty+elapsedRKGParty+elapsedRTGParty+elapsedEncryptParty+elapsedEvalParty+elapsedPCKSParty+elapsedDecParty)
 	fmt.Println()
-
-	fmt.Printf("Main() Done in %s \n", time.Since(start))
 }
 
 //main end
 
 // encPhase to get []ciphertext
-func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ckks.Encoder) (encInputs, encInputsCopy, encInputsCopy2 []*ckks.Ciphertext) {
+func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ckks.Encoder) (encInputsAverage, encInputsNegative, encInputsSummation []*ckks.Ciphertext) {
 
 	l := log.New(os.Stderr, "", 0)
 
-	encInputs = make([]*ckks.Ciphertext, len(P))
-	encInputsCopy = make([]*ckks.Ciphertext, len(P))
-	encInputsCopy2 = make([]*ckks.Ciphertext, len(P))
+	encInputsAverage = make([]*ckks.Ciphertext, len(P))
+	encInputsNegative = make([]*ckks.Ciphertext, len(P))
+	encInputsSummation = make([]*ckks.Ciphertext, len(P))
 
-	for i := range encInputs {
-		encInputs[i] = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
-		encInputsCopy[i] = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
-		encInputsCopy2[i] = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
+	for i := range encInputsAverage {
+		encInputsAverage[i] = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
+		encInputsNegative[i] = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
+		encInputsSummation[i] = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
 	}
 
 	// Each party encrypts its input vector
@@ -240,17 +286,17 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 	encryptor := ckks.NewEncryptor(params, pk)
 	pt := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 
-	elapsedEncryptParty = runTimedParty(func() {
+	elapsedEncryptParty += runTimedParty(func() {
 		for i, pi := range P {
 			encoder.Encode(pi.input, pt, params.LogSlots())
-			encryptor.Encrypt(pt, encInputs[i])
-			encryptor.Encrypt(pt, encInputsCopy2[i])
+			encryptor.Encrypt(pt, encInputsAverage[i])
+			encryptor.Encrypt(pt, encInputsSummation[i])
 			//turn pi.input to negative
 			for j, _ := range pi.input {
 				pi.input[j] *= -1
 			}
 			encoder.Encode(pi.input, pt, params.LogSlots())
-			encryptor.Encrypt(pt, encInputsCopy[i])
+			encryptor.Encrypt(pt, encInputsNegative[i])
 			////turn pi.input to positive
 			for j, _ := range pi.input {
 				pi.input[j] *= -1
@@ -258,7 +304,7 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 		}
 	}, 3*len(P)) //3 encryption in function
 
-	elapsedEncryptCloud = time.Duration(0)
+	elapsedEncryptCloud += time.Duration(0)
 	l.Printf("\tdone (cloud: %s, party: %s)\n", elapsedEncryptCloud, elapsedEncryptParty)
 
 	return
@@ -318,16 +364,20 @@ func resizeCSV(folderName string, id int) []float64 {
 }
 
 //generate inputs of parties
-func genInputs(params ckks.Parameters, P []*party) (globalPartyRows int, expAverage, expDeviation []float64) {
+func genInputs(params ckks.Parameters, P []*party, maximumLenPartyRows int) (globalPartyRows int, expSummation, expAverage, expDeviation []float64) {
 
 	globalPartyRows = -1
 	for pi, po := range P {
 		partyRows := resizeCSV(po.folderName, po.id)
 		lenPartyRows := len(partyRows)
+		if maximumLenPartyRows < lenPartyRows {
+			lenPartyRows = maximumLenPartyRows
+		}
 
 		if globalPartyRows == -1 {
 			//global setting, run once
 			globalPartyRows = lenPartyRows
+			expSummation = make([]float64, len(P))
 			expAverage = make([]float64, len(P))
 			expDeviation = make([]float64, len(P))
 		} else if globalPartyRows != lenPartyRows {
@@ -339,10 +389,10 @@ func genInputs(params ckks.Parameters, P []*party) (globalPartyRows int, expAver
 		po.input = make([]float64, lenPartyRows)
 		for i := range po.input {
 			po.input[i] = partyRows[i]
-			expAverage[pi] += po.input[i]
+			expSummation[pi] += po.input[i]
 		}
 
-		expAverage[pi] /= float64(globalPartyRows)
+		expAverage[pi] = expSummation[pi] / float64(globalPartyRows)
 
 		for i := range po.input {
 			temp := po.input[i] - expAverage[pi]
@@ -370,7 +420,7 @@ func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphert
 	}
 
 	l.Println("> PCKS Phase(key switching)")
-	elapsedPCKSParty = runTimedParty(func() {
+	elapsedPCKSParty += runTimedParty(func() {
 		for _, pi := range P {
 			pcks.GenShare(pi.sk, tpk, encRes.Value[1], pi.pcksShare)
 		}
@@ -378,7 +428,7 @@ func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphert
 
 	pcksCombined := pcks.AllocateShare(params.MaxLevel())
 	encOut = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
-	elapsedPCKSCloud = runTimed(func() {
+	elapsedPCKSCloud += runTimed(func() {
 		for _, pi := range P {
 			pcks.AggregateShare(pi.pcksShare, pcksCombined, pcksCombined)
 		}
@@ -404,7 +454,6 @@ func rtkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Rotatio
 	}
 
 	galEls := params.GaloisElementsForRowInnerSum()
-	fmt.Println("galEls size:", len(galEls))
 	rotKeySet := ckks.NewRotationKeySet(params, galEls)
 
 	for _, galEl := range galEls {
@@ -452,7 +501,7 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 		}
 	}, len(P))
 
-	elapsedRKGCloud = runTimed(func() {
+	elapsedRKGCloud += runTimed(func() {
 		for _, pi := range P {
 			rkg.AggregateShare(pi.rkgShareOne, rkgCombined1, rkgCombined1)
 		}
@@ -492,7 +541,7 @@ func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKe
 
 	crp := ckg.SampleCRP(crs)
 
-	elapsedCKGParty = runTimedParty(func() {
+	elapsedCKGParty += runTimedParty(func() {
 		for _, pi := range P {
 			ckg.GenShare(pi.sk, crp, pi.ckgShare)
 		}
@@ -500,7 +549,7 @@ func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKe
 
 	pk := ckks.NewPublicKey(params)
 
-	elapsedCKGCloud = runTimed(func() {
+	elapsedCKGCloud += runTimed(func() {
 		for _, pi := range P {
 			ckg.AggregateShare(pi.ckgShare, ckgCombined, ckgCombined)
 		}
