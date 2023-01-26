@@ -77,13 +77,14 @@ var elapsedRTGCloud time.Duration
 var elapsedRTGParty time.Duration
 var elapsedPCKSCloud time.Duration
 var elapsedPCKSParty time.Duration
-var elapsedEvalCloud time.Duration
-var elapsedEvalParty time.Duration
 var elapsedDecParty time.Duration
 
 var elapsedAddition time.Duration
 var elapsedMultiplication time.Duration
 var elapsedRotation time.Duration
+
+var elapsedSummation time.Duration
+var elapsedDeviation time.Duration
 
 var pathFormat = "C:\\Users\\23304161\\source\\smw\\%s\\House_10sec_1month_%d.csv"
 
@@ -96,33 +97,46 @@ func main() {
 
 	householdIDs := []int{}
 	minHouseholdID := 1
-	maxHouseholdID := 200
+	maxHouseholdID := 10
 
 	for householdID := minHouseholdID; householdID <= maxHouseholdID; householdID++ {
 		householdIDs = append(householdIDs, householdID)
 	}
 
-	for i := 0; i < loop; i++ {
-		process(householdIDs, maximumLenPartyRows, folderName)
-	}
-	fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	var err error
+	paramsDef := ckks.PN14QP438CI
+	params, err := ckks.NewParametersFromLiteral(paramsDef)
+	check(err)
 
+	for i := 0; i < loop; i++ {
+		process(householdIDs, maximumLenPartyRows, folderName, params)
+	}
+
+	fmt.Println("1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	fmt.Printf("***** Evaluating Summation time for %d households in thirdparty analyst's side: %s\n", len(householdIDs), time.Duration(elapsedSummation.Nanoseconds()/int64(loop)))
+	fmt.Printf("***** Evaluating Deviation time for %d households in thirdparty analyst's side: %s\n", len(householdIDs), time.Duration(elapsedDeviation.Nanoseconds()/int64(loop)))
+
+	fmt.Println("2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+	//contains cloud & party. cloud is dependent of households' size; party isn't
 	fmt.Printf("*****Amortized CKG Time: %s(cloud); %s(party)\n", time.Duration(elapsedCKGCloud.Nanoseconds()/int64(loop)), time.Duration(elapsedCKGParty.Nanoseconds()/int64(loop)))
 	fmt.Printf("*****Amortized RKG Time: %s(cloud); %s(party)\n", time.Duration(elapsedRKGCloud.Nanoseconds()/int64(loop)), time.Duration(elapsedRKGParty.Nanoseconds()/int64(loop)))
 	fmt.Printf("*****Amortized RTG Time: %s(cloud); %s(party)\n", time.Duration(elapsedRTGCloud.Nanoseconds()/int64(loop)), time.Duration(elapsedRTGParty.Nanoseconds()/int64(loop)))
+	//pcksphase method is called 2*len(householdsID) for each loop
+	fmt.Printf("*****Amortized PCKS Time: %s(cloud); %s(party)\n", time.Duration(elapsedPCKSCloud.Nanoseconds()/int64(loop*2*len(householdIDs))), time.Duration(elapsedPCKSParty.Nanoseconds()/int64(loop*2*len(householdIDs))))
 
+	//single operation, independent of households' size
 	fmt.Printf("*****Amortized Encrypt Time: %s\n", time.Duration(elapsedEncryptParty.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Decrypt Time: %s\n", time.Duration(elapsedDecParty.Nanoseconds()/int64(3*len(householdIDs)*loop)))
-
-	fmt.Printf("*****Amortized Ciphertext Addition Time: %s\n", time.Duration(elapsedAddition.Nanoseconds()/int64(len(householdIDs)*loop)))
-	fmt.Printf("*****Amortized Ciphertext Multiplication Time: %s\n", time.Duration(elapsedMultiplication.Nanoseconds()/int64(len(householdIDs)*loop)))
-	fmt.Printf("*****Amortized Ciphertext Rotation Time: %s\n", time.Duration(elapsedRotation.Nanoseconds()/int64(len(householdIDs)*14*loop))) // 14 = len(params.GaloisElementsForRowInnerSum())
+	fmt.Printf("*****Amortized Decrypt Time: %s\n", time.Duration(elapsedDecParty.Nanoseconds()/int64(loop)))
+	fmt.Printf("*****Amortized Ciphertext Addition Time: %s\n", time.Duration(elapsedAddition.Nanoseconds()/int64(loop)))
+	fmt.Printf("*****Amortized Ciphertext Multiplication Time: %s\n", time.Duration(elapsedMultiplication.Nanoseconds()/int64(loop)))
+	fmt.Printf("*****Amortized Ciphertext Rotation Time: %s\n", time.Duration(elapsedRotation.Nanoseconds()/int64(loop*len(params.GaloisElementsForRowInnerSum()))))
 
 	fmt.Printf("Main() Done in %s \n", time.Since(start))
 }
 
 //main start
-func process(householdIDs []int, maximumLenPartyRows int, folderName string) {
+func process(householdIDs []int, maximumLenPartyRows int, folderName string, params ckks.Parameters) {
 
 	// For more details about the PSI example see
 	//     Multiparty Homomorphic Encryption: From Theory to Practice (<https://eprint.iacr.org/2020/304>)
@@ -132,9 +146,6 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string) {
 	// arg1: number of parties
 	// arg2: number of Go routines
 	var err error
-	paramsDef := ckks.PN14QP438CI
-	params, err := ckks.NewParametersFromLiteral(paramsDef)
-	check(err)
 
 	// householdIDs := []int{6, 7, 8} // using suffix IDs of the csv files
 	// Largest for n=8192: 512 parties
@@ -171,28 +182,33 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string) {
 
 	// summation
 	for _, encInputSummation := range encInputsSummation {
-		elapsedRotation += runTimed(func() {
-			evaluator.InnerSumLog(encInputSummation, 1, params.Slots(), encInputSummation)
+		elapsedSummation += runTimed(func() {
+			elapsedRotation += runTimedParty(func() {
+				evaluator.InnerSumLog(encInputSummation, 1, params.Slots(), encInputSummation)
+			}, len(P))
 		})
+
 		encSummationOuts = append(encSummationOuts, pcksPhase(params, tpk, encInputSummation, P))
 	}
 
 	// deviation
 	for i, encInputAverage := range encInputsAverage {
-		evaluator.InnerSumLog(encInputAverage, 1, params.Slots(), encInputAverage)
-		encInputAverage.Scale *= float64(globalPartyRows) //each element contains the
+		elapsedDeviation += runTimed(func() {
+			evaluator.InnerSumLog(encInputAverage, 1, params.Slots(), encInputAverage)
+			encInputAverage.Scale *= float64(globalPartyRows) //each element contains the
 
-		// encAverageOuts = append(encAverageOuts, pcksPhase(params, tpk, encInputAverage, P)) // cpk -> tpk, key switching
+			// encAverageOuts = append(encAverageOuts, pcksPhase(params, tpk, encInputAverage, P)) // cpk -> tpk, key switching
 
-		elapsedAddition += runTimed(func() {
-			evaluator.Add(encInputsNegative[i], encInputAverage, encInputsNegative[i])
+			elapsedAddition += runTimedParty(func() {
+				evaluator.Add(encInputsNegative[i], encInputAverage, encInputsNegative[i])
+			}, len(P))
+			elapsedMultiplication += runTimedParty(func() {
+				evaluator.MulRelin(encInputsNegative[i], encInputsNegative[i], encInputsNegative[i])
+			}, len(P))
+
+			evaluator.InnerSumLog(encInputsNegative[i], 1, params.Slots(), encInputsNegative[i])
+			encInputsNegative[i].Scale *= float64(globalPartyRows)
 		})
-		elapsedMultiplication += runTimed(func() {
-			evaluator.MulRelin(encInputsNegative[i], encInputsNegative[i], encInputsNegative[i])
-		})
-
-		evaluator.InnerSumLog(encInputsNegative[i], 1, params.Slots(), encInputsNegative[i])
-		encInputsNegative[i].Scale *= float64(globalPartyRows)
 
 		encDeviationOuts = append(encDeviationOuts, pcksPhase(params, tpk, encInputsNegative[i], P)) // cpk -> tpk
 	}
@@ -207,9 +223,7 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string) {
 
 	// print summation
 	for i, _ := range encSummationOuts {
-		elapsedDecParty += runTimed(func() {
-			decryptor.Decrypt(encSummationOuts[i], ptresSummation) //ciphertext->plaintext
-		})
+		decryptor.Decrypt(encSummationOuts[i], ptresSummation)            //ciphertext->plaintext
 		resSummation := encoder.Decode(ptresSummation, params.LogSlots()) //plaintext->complex numbers
 		fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0]))
 		fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
@@ -218,10 +232,11 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string) {
 
 	// print deviation
 	for i, _ := range encDeviationOuts {
-		elapsedDecParty += runTimed(func() {
+
+		elapsedDecParty += runTimedParty(func() {
 			// decryptor.Decrypt(encAverageOuts[i], ptres)            //ciphertext->plaintext
 			decryptor.Decrypt(encDeviationOuts[i], ptresDeviation) //ciphertext->plaintext
-		})
+		}, len(P))
 
 		res := encoder.Decode(ptres, params.LogSlots())
 		resDeviation := encoder.Decode(ptresDeviation, params.LogSlots())
@@ -240,7 +255,7 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string) {
 		fmt.Println()
 	}
 
-	fmt.Printf("\tDecrypt Time: done (party: %s)\n", time.Duration(elapsedDecParty.Nanoseconds()/int64(3*len(P))))
+	fmt.Printf("\tDecrypt Time: done (party: %s)\n", elapsedDecParty)
 	fmt.Println()
 
 	//print result
@@ -256,12 +271,6 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string) {
 		}
 		fmt.Println()
 	}
-
-	//elapsedDuration
-	fmt.Printf("> Finished (total cloud: %s, total party: %s)\n",
-		elapsedCKGCloud+elapsedRKGCloud+elapsedRTGCloud+elapsedEncryptCloud+elapsedEvalCloud+elapsedPCKSCloud,
-		elapsedCKGParty+elapsedRKGParty+elapsedRTGParty+elapsedEncryptParty+elapsedEvalParty+elapsedPCKSParty+elapsedDecParty)
-	fmt.Println()
 }
 
 //main end
@@ -495,7 +504,7 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 
 	crp := rkg.SampleCRP(crs)
 
-	elapsedRKGParty = runTimedParty(func() {
+	elapsedRKGParty += runTimedParty(func() {
 		for _, pi := range P {
 			rkg.GenShareRoundOne(pi.sk, crp, pi.rlkEphemSk, pi.rkgShareOne)
 		}
