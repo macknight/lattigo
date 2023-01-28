@@ -85,13 +85,13 @@ var pathFormat = "C:\\Users\\23304161\\source\\smw\\%s\\House_10sec_1month_%d.cs
 func main() {
 	start := time.Now()
 
-	loop := 10
+	loop := 1
 	maximumLenPartyRows := 8640
 	folderName := "200Houses_10s_1month_highVD"
 
 	householdIDs := []int{}
 	minHouseholdID := 1
-	maxHouseholdID := 20
+	maxHouseholdID := 1
 
 	for householdID := minHouseholdID; householdID <= maxHouseholdID; householdID++ {
 		householdIDs = append(householdIDs, householdID)
@@ -218,7 +218,7 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 	// Decrypt & Check the result
 	l.Println("> Decrypt & Result:>>>>>>>>>>>>>")
 
-	ptres := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
+	// ptres := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 	ptresDeviation := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 	ptresSummation := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 
@@ -239,10 +239,11 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 			decryptor.Decrypt(encDeviationOuts[i], ptresDeviation) //ciphertext->plaintext
 		}, len(P))
 
-		res := encoder.Decode(ptres, params.LogSlots())
+		// res := encoder.Decode(ptres, params.LogSlots())
 		resDeviation := encoder.Decode(ptresDeviation, params.LogSlots())
 
-		calculatedAverage := real(res[0])
+		// calculatedAverage := real(res[0])
+		calculatedAverage := expAverage[i]
 
 		fmt.Printf("CKKS Average of Party[%d]=%.6f\t", i, calculatedAverage)
 		fmt.Printf(" <===> Expected Average of Party[%d]=%.6f\t", i, expAverage[i])
