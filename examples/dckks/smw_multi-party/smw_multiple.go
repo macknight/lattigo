@@ -71,6 +71,8 @@ var elapsedEncryptParty time.Duration
 var elapsedEncryptCloud time.Duration
 var elapsedCKGCloud time.Duration
 var elapsedCKGParty time.Duration
+var elapsedSKGParty time.Duration
+
 var elapsedRKGCloud time.Duration
 var elapsedRKGParty time.Duration
 var elapsedRTGCloud time.Duration
@@ -97,7 +99,7 @@ func main() {
 
 	householdIDs := []int{}
 	minHouseholdID := 1
-	maxHouseholdID := 10
+	maxHouseholdID := 5
 
 	for householdID := minHouseholdID; householdID <= maxHouseholdID; householdID++ {
 		householdIDs = append(householdIDs, householdID)
@@ -119,6 +121,7 @@ func main() {
 	fmt.Println("2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 	//contains cloud & party. cloud is dependent of households' size; party isn't
+	fmt.Printf("*****Amortized SKG Time: %s(party)\n", time.Duration(elapsedSKGParty.Nanoseconds()/int64(loop)))
 	fmt.Printf("*****Amortized CKG Time: %s(cloud); %s(party)\n", time.Duration(elapsedCKGCloud.Nanoseconds()/int64(loop)), time.Duration(elapsedCKGParty.Nanoseconds()/int64(loop)))
 	fmt.Printf("*****Amortized RKG Time: %s(cloud); %s(party)\n", time.Duration(elapsedRKGCloud.Nanoseconds()/int64(loop)), time.Duration(elapsedRKGParty.Nanoseconds()/int64(loop)))
 	fmt.Printf("*****Amortized RTG Time: %s(cloud); %s(party)\n", time.Duration(elapsedRTGCloud.Nanoseconds()/int64(loop)), time.Duration(elapsedRTGParty.Nanoseconds()/int64(loop)))
@@ -327,7 +330,9 @@ func genparties(params ckks.Parameters, folderName string, householdIDs []int) [
 
 	for i, id := range householdIDs {
 		pi := &party{}
-		pi.sk = ckks.NewKeyGenerator(params).GenSecretKey()
+		elapsedSKGParty += runTimedParty(func() {
+			pi.sk = ckks.NewKeyGenerator(params).GenSecretKey()
+		}, N)
 		pi.id = id
 		pi.folderName = folderName
 
