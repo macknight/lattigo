@@ -212,15 +212,15 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 	fmt.Println(unsafe.Sizeof(rlk))
 	fmt.Println(unsafe.Sizeof(rotk))
 
-	// if err := Save("./multi_pk.tmp", pk); err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// if err := Save("./multi_rlk.tmp", rlk); err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// if err := Save("./multi_rotk.tmp", rotk); err != nil {
-	// 	log.Fatalln(err)
-	// }
+	if err := Save("./multi_pk.tmp", pk); err != nil {
+		log.Fatalln(err)
+	}
+	if err := Save("./multi_rlk.tmp", rlk); err != nil {
+		log.Fatalln(err)
+	}
+	if err := Save("./multi_rotk.tmp", rotk); err != nil {
+		log.Fatalln(err)
+	}
 
 	//generate ciphertexts
 	encInputsAverage, encInputsNegative, encInputsSummation := encPhase(params, P, pk, encoder)
@@ -310,11 +310,11 @@ func genparties(params ckks.Parameters, folderName string, householdIDs []int) [
 		pi := &party{}
 		elapsedSKGParty += runTimedParty(func() {
 			pi.sk = ckks.NewKeyGenerator(params).GenSecretKey()
-			// if i == 0 {
-			// 	if err := Save("./multi_sk0.tmp", pi.sk); err != nil {
-			// 		log.Fatalln(err)
-			// 	}
-			// }
+			if i == 0 {
+				if err := Save("./multi_sk0.tmp", pi.sk); err != nil {
+					log.Fatalln(err)
+				}
+			}
 		}, N)
 		pi.id = id
 		pi.folderName = folderName
@@ -414,18 +414,19 @@ func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphert
 	}, len(P))
 
 	pcksCombined := pcks.AllocateShare(params.MaxLevel())
-	// 	if err := Save("./multi_pcksCombined.tmp", pcksCombined); err != nil {
-	// 		log.Fatalln(err)
-	// 	}
+	if err := Save("./multi_pcksCombined.tmp", pcksCombined); err != nil {
+		log.Fatalln(err)
+	}
+
 	encOut = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
 	elapsedPCKSCloud += runTimed(func() {
-		for _, pi := range P {
+		for i, pi := range P {
 			pcks.AggregateShare(pi.pcksShare, pcksCombined, pcksCombined)
-			// if i == 0 {
-			// 	if err := Save("./multi_pcksCombined_aggregated.tmp", pcksCombined); err != nil {
-			// 		log.Fatalln(err)
-			// 	}
-			// }
+			if i == 0 {
+				if err := Save("./multi_pcksCombined_aggregated.tmp", pcksCombined); err != nil {
+					log.Fatalln(err)
+				}
+			}
 		}
 		pcks.KeySwitch(encRes, pcksCombined, encOut)
 
@@ -460,13 +461,13 @@ func rtkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Rotatio
 		}, len(P))
 
 		elapsedRTGCloud += runTimed(func() {
-			for _, pi := range P {
+			for i, pi := range P {
 				rtg.AggregateShare(pi.rtgShare, rtgShareCombined, rtgShareCombined)
-				// if i == 0 {
-				// 	if err := Save("./multi_rtgShareCombined_aggregated.tmp", rtgShareCombined); err != nil {
-				// 		log.Fatalln(err)
-				// 	}
-				// }
+				if i == 0 {
+					if err := Save("./multi_rtgShareCombined_aggregated.tmp", rtgShareCombined); err != nil {
+						log.Fatalln(err)
+					}
+				}
 			}
 			rtg.GenRotationKey(rtgShareCombined, crp, rotKeySet.Keys[galEl])
 		})
@@ -480,12 +481,12 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 
 	rkg := dckks.NewRKGProtocol(params) // Relineariation key generation
 	_, rkgCombined1, rkgCombined2 := rkg.AllocateShare()
-	// if err := Save("./multi_rkgCombined1.tmp", rkgCombined1); err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// if err := Save("./multi_rkgCombined2.tmp", rkgCombined2); err != nil {
-	// 	log.Fatalln(err)
-	// }
+	if err := Save("./multi_rkgCombined1.tmp", rkgCombined1); err != nil {
+		log.Fatalln(err)
+	}
+	if err := Save("./multi_rkgCombined2.tmp", rkgCombined2); err != nil {
+		log.Fatalln(err)
+	}
 
 	for _, pi := range P {
 		pi.rlkEphemSk, pi.rkgShareOne, pi.rkgShareTwo = rkg.AllocateShare()
@@ -502,9 +503,9 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 	elapsedRKGCloud += runTimed(func() {
 		for _, pi := range P {
 			rkg.AggregateShare(pi.rkgShareOne, rkgCombined1, rkgCombined1)
-			// if err := Save("./multi_rkgCombined1_aggregated.tmp", rkgCombined1); err != nil {
-			// 	log.Fatalln(err)
-			// }
+			if err := Save("./multi_rkgCombined1_aggregated.tmp", rkgCombined1); err != nil {
+				log.Fatalln(err)
+			}
 		}
 	})
 	////////////////////////////////////////////////////////
@@ -518,9 +519,9 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 	elapsedRKGCloud += runTimed(func() {
 		for _, pi := range P {
 			rkg.AggregateShare(pi.rkgShareTwo, rkgCombined2, rkgCombined2)
-			// if err := Save("./multi_rkgCombined2_aggregated.tmp", rkgCombined2); err != nil {
-			// 	log.Fatalln(err)
-			// }
+			if err := Save("./multi_rkgCombined2_aggregated.tmp", rkgCombined2); err != nil {
+				log.Fatalln(err)
+			}
 		}
 		rkg.GenRelinearizationKey(rkgCombined1, rkgCombined2, rlk)
 	})
@@ -536,9 +537,9 @@ func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKe
 	for _, pi := range P {
 		pi.ckgShare = ckg.AllocateShare()
 	}
-	// if err := Save("./multi_ckgCombined.tmp", ckgCombined); err != nil {
-	// 	log.Fatalln(err)
-	// }
+	if err := Save("./multi_ckgCombined.tmp", ckgCombined); err != nil {
+		log.Fatalln(err)
+	}
 
 	crp := ckg.SampleCRP(crs)
 	elapsedCKGParty += runTimedParty(func() {
@@ -549,13 +550,13 @@ func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKe
 
 	pk := ckks.NewPublicKey(params)
 	elapsedCKGCloud += runTimed(func() {
-		for _, pi := range P {
+		for i, pi := range P {
 			ckg.AggregateShare(pi.ckgShare, ckgCombined, ckgCombined)
-			// if i == 0 {
-			// 	if err := Save("./multi_ckgCombined_aggregated.tmp", ckgCombined); err != nil {
-			// 		log.Fatalln(err)
-			// 	}
-			// }
+			if i == 0 {
+				if err := Save("./multi_ckgCombined_aggregated.tmp", ckgCombined); err != nil {
+					log.Fatalln(err)
+				}
+			}
 		}
 		ckg.GenPublicKey(ckgCombined, crp, pk)
 	})
