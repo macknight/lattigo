@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"os"
 	"runtime"
@@ -446,9 +445,9 @@ func rtkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Rotatio
 	rotKeySet := ckks.NewRotationKeySet(params, galEls)
 	for _, galEl := range galEls {
 		rtgShareCombined := rtg.AllocateShare()
-		if err := Save("./multi_rtgShareCombined.tmp", rtgShareCombined); err != nil {
-			log.Fatalln(err)
-		}
+		// if err := Save("./multi_rtgShareCombined.tmp", rtgShareCombined); err != nil {
+		// 	log.Fatalln(err)
+		// }
 		crp := rtg.SampleCRP(crs)
 		elapsedRTGParty += runTimedParty(func() {
 			for _, pi := range P {
