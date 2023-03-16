@@ -105,7 +105,7 @@ var elapsedEncryptParty time.Duration
 var elapsedDecParty time.Duration
 
 // var pathFormat = "C:\\Users\\23304161\\source\\smw\\%s\\House_10sec_1month_%d.csv"
-var pathFormat = ".\\%s\\House_10sec_1month_%d.csv"
+var pathFormat = "./%s/House_10sec_1month_%d.csv"
 
 func main() {
 	start := time.Now()
