@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"os"
 	"runtime"
@@ -410,10 +411,18 @@ func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphert
 	}, len(P))
 
 	pcksCombined := pcks.AllocateShare(params.MaxLevel())
+	// 	if err := Save("./multi_pcksCombined.tmp", pcksCombined); err != nil {
+	// 		log.Fatalln(err)
+	// 	}
 	encOut = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
 	elapsedPCKSCloud += runTimed(func() {
 		for _, pi := range P {
 			pcks.AggregateShare(pi.pcksShare, pcksCombined, pcksCombined)
+			// if i == 0 {
+			// 	if err := Save("./multi_pcksCombined_aggregated.tmp", pcksCombined); err != nil {
+			// 		log.Fatalln(err)
+			// 	}
+			// }
 		}
 		pcks.KeySwitch(encRes, pcksCombined, encOut)
 
@@ -433,9 +442,13 @@ func rtkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Rotatio
 	}
 
 	galEls := params.GaloisElementsForRowInnerSum()
+
 	rotKeySet := ckks.NewRotationKeySet(params, galEls)
 	for _, galEl := range galEls {
 		rtgShareCombined := rtg.AllocateShare()
+		if err := Save("./multi_rtgShareCombined.tmp", rtgShareCombined); err != nil {
+			log.Fatalln(err)
+		}
 		crp := rtg.SampleCRP(crs)
 		elapsedRTGParty += runTimedParty(func() {
 			for _, pi := range P {
@@ -446,6 +459,11 @@ func rtkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Rotatio
 		elapsedRTGCloud += runTimed(func() {
 			for _, pi := range P {
 				rtg.AggregateShare(pi.rtgShare, rtgShareCombined, rtgShareCombined)
+				// if i == 0 {
+				// 	if err := Save("./multi_rtgShareCombined_aggregated.tmp", rtgShareCombined); err != nil {
+				// 		log.Fatalln(err)
+				// 	}
+				// }
 			}
 			rtg.GenRotationKey(rtgShareCombined, crp, rotKeySet.Keys[galEl])
 		})
@@ -459,13 +477,19 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 
 	rkg := dckks.NewRKGProtocol(params) // Relineariation key generation
 	_, rkgCombined1, rkgCombined2 := rkg.AllocateShare()
+	// if err := Save("./multi_rkgCombined1.tmp", rkgCombined1); err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// if err := Save("./multi_rkgCombined2.tmp", rkgCombined2); err != nil {
+	// 	log.Fatalln(err)
+	// }
 
 	for _, pi := range P {
 		pi.rlkEphemSk, pi.rkgShareOne, pi.rkgShareTwo = rkg.AllocateShare()
 	}
 
+	////////////////////////////////////////////
 	crp := rkg.SampleCRP(crs)
-
 	elapsedRKGParty += runTimedParty(func() {
 		for _, pi := range P {
 			rkg.GenShareRoundOne(pi.sk, crp, pi.rlkEphemSk, pi.rkgShareOne)
@@ -475,9 +499,12 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 	elapsedRKGCloud += runTimed(func() {
 		for _, pi := range P {
 			rkg.AggregateShare(pi.rkgShareOne, rkgCombined1, rkgCombined1)
+			// if err := Save("./multi_rkgCombined1_aggregated.tmp", rkgCombined1); err != nil {
+			// 	log.Fatalln(err)
+			// }
 		}
 	})
-
+	////////////////////////////////////////////////////////
 	elapsedRKGParty += runTimedParty(func() {
 		for _, pi := range P {
 			rkg.GenShareRoundTwo(pi.rlkEphemSk, pi.sk, rkgCombined1, pi.rkgShareTwo)
@@ -488,6 +515,9 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 	elapsedRKGCloud += runTimed(func() {
 		for _, pi := range P {
 			rkg.AggregateShare(pi.rkgShareTwo, rkgCombined2, rkgCombined2)
+			// if err := Save("./multi_rkgCombined2_aggregated.tmp", rkgCombined2); err != nil {
+			// 	log.Fatalln(err)
+			// }
 		}
 		rkg.GenRelinearizationKey(rkgCombined1, rkgCombined2, rlk)
 	})
@@ -503,9 +533,11 @@ func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKe
 	for _, pi := range P {
 		pi.ckgShare = ckg.AllocateShare()
 	}
+	// if err := Save("./multi_ckgCombined.tmp", ckgCombined); err != nil {
+	// 	log.Fatalln(err)
+	// }
 
 	crp := ckg.SampleCRP(crs)
-
 	elapsedCKGParty += runTimedParty(func() {
 		for _, pi := range P {
 			ckg.GenShare(pi.sk, crp, pi.ckgShare)
@@ -513,14 +545,17 @@ func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKe
 	}, len(P))
 
 	pk := ckks.NewPublicKey(params)
-
 	elapsedCKGCloud += runTimed(func() {
 		for _, pi := range P {
 			ckg.AggregateShare(pi.ckgShare, ckgCombined, ckgCombined)
+			// if i == 0 {
+			// 	if err := Save("./multi_ckgCombined_aggregated.tmp", ckgCombined); err != nil {
+			// 		log.Fatalln(err)
+			// 	}
+			// }
 		}
 		ckg.GenPublicKey(ckgCombined, crp, pk)
 	})
-
 	return pk
 }
 
