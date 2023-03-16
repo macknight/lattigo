@@ -501,10 +501,12 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 	}, len(P))
 
 	elapsedRKGCloud += runTimed(func() {
-		for _, pi := range P {
+		for i, pi := range P {
 			rkg.AggregateShare(pi.rkgShareOne, rkgCombined1, rkgCombined1)
-			if err := Save("./multi_rkgCombined1_aggregated.tmp", rkgCombined1); err != nil {
-				log.Fatalln(err)
+			if i == 0 {
+				if err := Save("./multi_rkgCombined1_aggregated.tmp", rkgCombined1); err != nil {
+					log.Fatalln(err)
+				}
 			}
 		}
 	})
