@@ -222,6 +222,7 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 		log.Fatalln(err)
 	}
 
+	fmt.Println("persistence done.")
 	//generate ciphertexts
 	encInputsAverage, encInputsNegative, encInputsSummation := encPhase(params, P, pk, encoder)
 

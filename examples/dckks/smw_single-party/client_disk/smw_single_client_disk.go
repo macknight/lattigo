@@ -194,6 +194,7 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 		log.Fatalln(err)
 	}
 
+	fmt.Println("persistence done.")
 	decryptor := ckks.NewDecryptor(params, tsk)
 	encoder := ckks.NewEncoder(params)
 
