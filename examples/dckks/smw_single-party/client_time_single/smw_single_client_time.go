@@ -104,6 +104,7 @@ var elapsedEncryptParty time.Duration
 var elapsedDecParty time.Duration
 
 // var pathFormat = "C:\\Users\\23304161\\source\\smw\\%s\\House_10sec_1month_%d.csv"
+
 var pathFormat = "./%s/House_10sec_1month_%d.csv"
 
 func main() {
@@ -115,7 +116,7 @@ func main() {
 
 	householdIDs := []int{}
 	minHouseholdID := 1
-	maxHouseholdID := 1
+	maxHouseholdID := 100
 
 	for householdID := minHouseholdID; householdID <= maxHouseholdID; householdID++ {
 		householdIDs = append(householdIDs, householdID)
@@ -249,6 +250,8 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 	pt := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 
 	elapsedEncryptParty += runTimedParty(func() {
+		fmt.Println("PrintMemUsage enc start: households:", len(P))
+		PrintMemUsage()
 		for i, pi := range P {
 			encoder.Encode(pi.input, pt, params.LogSlots())
 			encryptor.Encrypt(pt, encInputsAverage[i])
@@ -264,6 +267,8 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 				pi.input[j] *= -1
 			}
 		}
+		fmt.Println("PrintMemUsage enc end")
+		PrintMemUsage()
 	}, 3*len(P)) //3 encryption in function
 
 	return

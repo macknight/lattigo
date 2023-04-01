@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -87,8 +88,16 @@ var elapsedRotation time.Duration
 
 var elapsedSummation time.Duration
 var elapsedDeviation time.Duration
+var elapsedAnalystSummation time.Duration
+var elapsedAnalystVariance time.Duration
+
+var spTotalMemory uint64
+var a uint64
+var b uint64
 
 var pathFormat = "C:\\Users\\23304161\\source\\smw\\%s\\House_10sec_1month_%d.csv"
+
+// var pathFormat = "./%s/House_10sec_1month_%d.csv"
 
 func main() {
 	start := time.Now()
@@ -99,7 +108,7 @@ func main() {
 
 	householdIDs := []int{}
 	minHouseholdID := 1
-	maxHouseholdID := 1
+	maxHouseholdID := 25
 
 	for householdID := minHouseholdID; householdID <= maxHouseholdID; householdID++ {
 		householdIDs = append(householdIDs, householdID)
@@ -135,7 +144,12 @@ func main() {
 	fmt.Printf("*****Amortized Ciphertext Multiplication Time: %s\n", time.Duration(elapsedMultiplication.Nanoseconds()/int64(loop)))
 	fmt.Printf("*****Amortized Ciphertext Rotation Time: %s\n", time.Duration(elapsedRotation.Nanoseconds()/int64(loop*len(params.GaloisElementsForRowInnerSum()))))
 
+	fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystSummation.Nanoseconds()/int64(loop)))
+	fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystVariance.Nanoseconds()/int64(loop)))
+
 	fmt.Printf("Main() Done in %s \n", time.Since(start))
+
+	PrintMemUsage()
 }
 
 //main start
@@ -183,6 +197,7 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 	// encAverageOuts := make([]*ckks.Ciphertext, 0)
 	encDeviationOuts := make([]*ckks.Ciphertext, 0)
 
+	anaTime1 := time.Now()
 	// summation
 	for _, encInputSummation := range encInputsSummation {
 		elapsedSummation += runTimed(func() {
@@ -193,7 +208,9 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 
 		encSummationOuts = append(encSummationOuts, pcksPhase(params, tpk, encInputSummation, P))
 	}
+	elapsedAnalystSummation += time.Since(anaTime1)
 
+	anaTime2 := time.Now()
 	// deviation
 	for i, encInputAverage := range encInputsAverage {
 		elapsedDeviation += runTimed(func() {
@@ -215,6 +232,7 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 
 		encDeviationOuts = append(encDeviationOuts, pcksPhase(params, tpk, encInputsNegative[i], P)) // cpk -> tpk
 	}
+	elapsedAnalystVariance += time.Since(anaTime2)
 
 	// Decrypt & Check the result
 	l.Println("> Decrypt & Result:>>>>>>>>>>>>>")
@@ -574,4 +592,28 @@ func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKe
 	l.Printf("\tckgphase done (cloud: %s, party: %s)\n", elapsedCKGCloud, elapsedCKGParty)
 
 	return pk
+}
+
+// outputs the current, total and OS memory being used. As well as the number
+// of garage collection cycles completed.
+func PrintMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+	fmt.Printf("Alloc = %v MiB", bToMb(m.Alloc))
+	fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
+	fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
+	fmt.Printf("\tNumGC = %v\n", m.NumGC)
+	fmt.Printf("==============\n")
+	fmt.Printf("\tspTotalMemory = %v MiB\n", spTotalMemory)
+}
+
+func currentTotalAlloc() uint64 {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	return bToMb(m.TotalAlloc)
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }

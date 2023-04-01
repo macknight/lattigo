@@ -135,19 +135,24 @@ var elapsedPCKSCloud time.Duration
 var elapsedPCKSParty time.Duration
 var elapsedDecParty time.Duration
 
+var spTotalMemory uint64
+var a uint64
+var b uint64
+
 // var pathFormat = "C:\\Users\\23304161\\source\\smw\\%s\\House_10sec_1month_%d.csv"
+
 var pathFormat = "./%s/House_10sec_1month_%d.csv"
 
 func main() {
 	start := time.Now()
 
-	loop := 10
+	loop := 1
 	maximumLenPartyRows := 8640
 	folderName := "200Houses_10s_1month_highVD"
 
 	householdIDs := []int{}
 	minHouseholdID := 1
-	maxHouseholdID := 10
+	maxHouseholdID := 50
 
 	for householdID := minHouseholdID; householdID <= maxHouseholdID; householdID++ {
 		householdIDs = append(householdIDs, householdID)
@@ -238,6 +243,7 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 	}
 
 	// Decrypt & Check the result
+	a = currentTotalAlloc()
 	decryptor := ckks.NewDecryptor(params, tsk)
 	ptresDeviation := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
 	ptresSummation := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
@@ -254,6 +260,10 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 		}, len(P))
 
 	}
+	b = currentTotalAlloc()
+	// record memory for decryption
+	spTotalMemory += b - a
+
 }
 
 //main end
@@ -414,6 +424,7 @@ func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphert
 	// 		log.Fatalln(err)
 	// 	}
 	encOut = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
+	a = currentTotalAlloc()
 	elapsedPCKSCloud += runTimed(func() {
 		for _, pi := range P {
 			pcks.AggregateShare(pi.pcksShare, pcksCombined, pcksCombined)
@@ -426,6 +437,8 @@ func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphert
 		pcks.KeySwitch(encRes, pcksCombined, encOut)
 
 	})
+	b = currentTotalAlloc()
+	spTotalMemory += b - a
 
 	return
 
@@ -455,6 +468,7 @@ func rtkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Rotatio
 			}
 		}, len(P))
 
+		a = currentTotalAlloc()
 		elapsedRTGCloud += runTimed(func() {
 			for _, pi := range P {
 				rtg.AggregateShare(pi.rtgShare, rtgShareCombined, rtgShareCombined)
@@ -466,6 +480,8 @@ func rtkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Rotatio
 			}
 			rtg.GenRotationKey(rtgShareCombined, crp, rotKeySet.Keys[galEl])
 		})
+		b = currentTotalAlloc()
+		spTotalMemory += b - a
 	}
 
 	return rotKeySet
@@ -495,6 +511,7 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 		}
 	}, len(P))
 
+	a = currentTotalAlloc()
 	elapsedRKGCloud += runTimed(func() {
 		for _, pi := range P {
 			rkg.AggregateShare(pi.rkgShareOne, rkgCombined1, rkgCombined1)
@@ -503,6 +520,8 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 			// }
 		}
 	})
+	b = currentTotalAlloc()
+	spTotalMemory += b - a
 	////////////////////////////////////////////////////////
 	elapsedRKGParty += runTimedParty(func() {
 		for _, pi := range P {
@@ -511,6 +530,8 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 	}, len(P))
 
 	rlk := ckks.NewRelinearizationKey(params)
+
+	a = currentTotalAlloc()
 	elapsedRKGCloud += runTimed(func() {
 		for _, pi := range P {
 			rkg.AggregateShare(pi.rkgShareTwo, rkgCombined2, rkgCombined2)
@@ -520,6 +541,8 @@ func rkgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.Relinear
 		}
 		rkg.GenRelinearizationKey(rkgCombined1, rkgCombined2, rlk)
 	})
+	b = currentTotalAlloc()
+	spTotalMemory += b - a
 
 	return rlk
 }
@@ -544,6 +567,8 @@ func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKe
 	}, len(P))
 
 	pk := ckks.NewPublicKey(params)
+
+	a = currentTotalAlloc()
 	elapsedCKGCloud += runTimed(func() {
 		for _, pi := range P {
 			ckg.AggregateShare(pi.ckgShare, ckgCombined, ckgCombined)
@@ -555,6 +580,10 @@ func ckgphase(params ckks.Parameters, crs utils.PRNG, P []*party) *rlwe.PublicKe
 		}
 		ckg.GenPublicKey(ckgCombined, crp, pk)
 	})
+	b = currentTotalAlloc()
+	//record memory for public key(cloud)
+	spTotalMemory += b - a
+
 	return pk
 }
 
@@ -568,6 +597,14 @@ func PrintMemUsage() {
 	fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
 	fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
 	fmt.Printf("\tNumGC = %v\n", m.NumGC)
+	fmt.Printf("==============\n")
+	fmt.Printf("\tspTotalMemory = %v MiB\n", spTotalMemory)
+}
+
+func currentTotalAlloc() uint64 {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	return bToMb(m.TotalAlloc)
 }
 
 func bToMb(b uint64) uint64 {
