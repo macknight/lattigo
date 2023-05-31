@@ -34,47 +34,43 @@ func main() {
 	var err error
 
 	// Base ring degree
-	LogN := 12
+	LogN := 13
 
-	LogQ := []int{35, 30}
-	LogP := []int{30}
+	Q := []uint64{0x1fffec001, // 33 + 5 x 30
+		0x3fff4001,
+		0x3ffe8001,
+		0x40020001,
+		0x40038001,
+		0x3ffc0001}
+	P := []uint64{0x800004001}
 
-	// Starting RLWE params, size of these params
-	// determine the complexity of the LUT:
-	// each LUT takes N RGSW ciphertext-ciphetext mul.
-	// LogN = 12 & LogQP = ~103 -> >128-bit secure.
 	var paramsN12 ckks.Parameters
 	if paramsN12, err = ckks.NewParametersFromLiteral(ckks.ParametersLiteral{
 		LogN:         LogN,
-		LogQ:         LogQ,
-		LogP:         LogP,
+		Q:            Q,
+		P:            P,
 		LogSlots:     4,
 		DefaultScale: 1 << 32,
 	}); err != nil {
 		panic(err)
 	}
 
-	// Params for Key-switching N12 to N11.
-	// LogN = 12 & LogQP = ~54 -> >>>128-bit secure.
 	var paramsN12ToN11 ckks.Parameters
 	if paramsN12ToN11, err = ckks.NewParametersFromLiteral(ckks.ParametersLiteral{
 		LogN:         LogN,
-		LogQ:         LogQ[:1],
-		LogP:         []int{20},
+		Q:            Q[:1],
+		P:            []uint64{0x3fff4001},
 		Pow2Base:     16,
 		DefaultScale: 1.0,
 	}); err != nil {
 		panic(err)
 	}
 
-	// LUT RLWE params, N of these params determine
-	// the LUT poly and therefore precision.
-	// LogN = 11 & LogQP = ~54 -> 128-bit secure.
 	var paramsN11 ckks.Parameters
 	if paramsN11, err = ckks.NewParametersFromLiteral(ckks.ParametersLiteral{
 		LogN:         LogN - 1,
-		LogQ:         LogQ[:1],
-		LogP:         []int{20},
+		Q:            Q[:1],
+		P:            []uint64{0x3fff4001},
 		Pow2Base:     12,
 		DefaultScale: 1.0,
 	}); err != nil {

@@ -38,7 +38,8 @@ func example() {
 
 	kgen := ckks.NewKeyGenerator(params)
 
-	sk := kgen.GenSecretKey()
+	// sk := kgen.GenSecretKey()
+	sk, _ := kgen.GenKeyPair()
 
 	rlk := kgen.GenRelinearizationKey(sk, 1)
 
@@ -95,6 +96,23 @@ func example() {
 
 	fmt.Println()
 	fmt.Println("===============================================")
+	fmt.Printf("        EVALUATION OF 2*x on %d values\n", slots)
+	fmt.Println("===============================================")
+	fmt.Println()
+
+	start = time.Now()
+	evaluator.MultByConst(ciphertext, 2, ciphertext)
+
+	fmt.Printf("Done in %s \n", time.Since(start))
+
+	for i := range values {
+		values[i] *= 2
+	}
+
+	printDebug(params, ciphertext, values, decryptor, encoder)
+
+	fmt.Println()
+	fmt.Println("===============================================")
 	fmt.Printf("        EVALUATION OF i*x on %d values\n", slots)
 	fmt.Println("===============================================")
 	fmt.Println()
@@ -112,6 +130,7 @@ func example() {
 	printDebug(params, ciphertext, values, decryptor, encoder)
 
 	fmt.Println()
+
 	fmt.Println("===============================================")
 	fmt.Printf("       EVALUATION of x/r on %d values\n", slots)
 	fmt.Println("===============================================")
