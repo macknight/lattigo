@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tuneinsight/lattigo/v3/ckks"
-	"github.com/tuneinsight/lattigo/v3/dckks"
-	"github.com/tuneinsight/lattigo/v3/drlwe"
-	"github.com/tuneinsight/lattigo/v3/rlwe"
-	"github.com/tuneinsight/lattigo/v3/utils"
+	"github.com/tuneinsight/lattigo/v4/ckks"
+	"github.com/tuneinsight/lattigo/v4/dckks"
+	"github.com/tuneinsight/lattigo/v4/drlwe"
+	"github.com/tuneinsight/lattigo/v4/rlwe"
+	"github.com/tuneinsight/lattigo/v4/utils"
 )
 
 // Check the result
@@ -54,9 +54,9 @@ type party struct {
 }
 type multTask struct {
 	wg              *sync.WaitGroup
-	op1             *ckks.Ciphertext
-	op2             *ckks.Ciphertext
-	res             *ckks.Ciphertext
+	op1             *rlwe.Ciphertext
+	op2             *rlwe.Ciphertext
+	res             *rlwe.Ciphertext
 	elapsedmultTask time.Duration
 }
 
@@ -150,7 +150,7 @@ func main() {
 	// Decrypt the result with the target secret key
 	l.Println("> Result:")
 	decryptor := ckks.NewDecryptor(params, tsk)
-	ptres := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
+	ptres := ckks.NewPlaintext(params, params.MaxLevel())
 	elapsedDecParty := runTimed(func() {
 		decryptor.Decrypt(encOut, ptres)
 	})
@@ -171,20 +171,20 @@ func main() {
 
 }
 
-func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ckks.Encoder) (encInputs []*ckks.Ciphertext, addition *ckks.Plaintext) {
+func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ckks.Encoder) (encInputs []*rlwe.Ciphertext, addition *rlwe.Plaintext) {
 
 	l := log.New(os.Stderr, "", 0)
 
-	encInputs = make([]*ckks.Ciphertext, len(P))
+	encInputs = make([]*rlwe.Ciphertext, len(P))
 	for i := range encInputs {
-		encInputs[i] = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
+		encInputs[i] = ckks.NewCiphertext(params, 1, params.MaxLevel())
 	}
 
 	// Each party encrypts its input vector
 	l.Println("> Encrypt Phase")
 	encryptor := ckks.NewEncryptor(params, pk)
 
-	pt := ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
+	pt := ckks.NewPlaintext(params, params.MaxLevel())
 	elapsedEncryptParty = runTimedParty(func() {
 		for i, pi := range P {
 			encoder.Encode(pi.input, pt, params.LogSlots())
@@ -192,7 +192,7 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 		}
 	}, len(P))
 
-	addition = ckks.NewPlaintext(params, params.MaxLevel(), params.DefaultScale())
+	addition = ckks.NewPlaintext(params, params.MaxLevel())
 	tmp := make([]float64, params.Slots())
 	tmp[0] = 1.0
 	// tmp[1] = 1
@@ -205,16 +205,16 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 	return
 }
 
-func evalPhase(params ckks.Parameters, NGoRoutine int, encInputs []*ckks.Ciphertext, rlk *rlwe.RelinearizationKey, rtk *rlwe.RotationKeySet, addition *ckks.Plaintext) (encRes *ckks.Ciphertext) {
+func evalPhase(params ckks.Parameters, NGoRoutine int, encInputs []*rlwe.Ciphertext, rlk *rlwe.RelinearizationKey, rtk *rlwe.RotationKeySet, addition *rlwe.Plaintext) (encRes *rlwe.Ciphertext) {
 
 	l := log.New(os.Stderr, "", 0)
 
-	encLvls := make([][]*ckks.Ciphertext, 0)
+	encLvls := make([][]*rlwe.Ciphertext, 0)
 	encLvls = append(encLvls, encInputs)
 	for nLvl := len(encInputs) / 2; nLvl > 0; nLvl = nLvl >> 1 {
-		encLvl := make([]*ckks.Ciphertext, nLvl)
+		encLvl := make([]*rlwe.Ciphertext, nLvl)
 		for i := range encLvl {
-			encLvl[i] = ckks.NewCiphertext(params, 2, params.MaxLevel(), params.DefaultScale())
+			encLvl[i] = ckks.NewCiphertext(params, 2, params.MaxLevel())
 		}
 		encLvls = append(encLvls, encLvl)
 	}
@@ -277,7 +277,7 @@ func evalPhase(params ckks.Parameters, NGoRoutine int, encInputs []*ckks.Ciphert
 	close(tasks)
 	workers.Wait()
 
-	evaluator.InnerSumLog(encRes, 1, params.Slots(), encRes)
+	evaluator.InnerSum(encRes, 1, params.Slots(), encRes)
 	evaluator.MulRelin(encRes, addition, encRes)
 
 	return
@@ -319,7 +319,7 @@ func genInputs(params ckks.Parameters, P []*party) (expRes []complex128) {
 	return
 }
 
-func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphertext, P []*party) (encOut *ckks.Ciphertext) {
+func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *rlwe.Ciphertext, P []*party) (encOut *rlwe.Ciphertext) {
 
 	l := log.New(os.Stderr, "", 0)
 
@@ -340,7 +340,7 @@ func pcksPhase(params ckks.Parameters, tpk *rlwe.PublicKey, encRes *ckks.Ciphert
 	}, len(P))
 
 	pcksCombined := pcks.AllocateShare(params.MaxLevel())
-	encOut = ckks.NewCiphertext(params, 1, params.MaxLevel(), params.DefaultScale())
+	encOut = ckks.NewCiphertext(params, 1, params.MaxLevel())
 	elapsedPCKSCloud = runTimed(func() {
 		for _, pi := range P {
 			pcks.AggregateShare(pi.pcksShare, pcksCombined, pcksCombined)
