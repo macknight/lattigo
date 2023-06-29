@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"math/rand"
 	"os"
 	"runtime"
 	"strconv"
@@ -13,11 +12,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lazybeaver/entropy"
 	"github.com/tuneinsight/lattigo/v4/ckks"
 	"github.com/tuneinsight/lattigo/v4/drlwe"
 	"github.com/tuneinsight/lattigo/v4/rlwe"
 )
+
+// Check the result
+const float64EqualityThreshold = 1e-4
+
+var NGoRoutine int = 1 // Default number of Go routines
 
 func almostEqual(a, b float64) bool {
 	return math.Abs(a-b) <= float64EqualityThreshold
@@ -52,13 +55,7 @@ type party struct {
 	rtgShare    *drlwe.RTGShare
 	pcksShare   *drlwe.PCKSShare
 
-	rawInput   []float64 //all data
-	input      []float64 //data of encryption
-	plainInput []float64 //data of plain
-	flag       []int
-	group      []int
-	entropy    []float64
-	transition []int
+	input []float64
 }
 
 type task struct {
@@ -84,36 +81,27 @@ var elapsedRotation time.Duration
 var elapsedSummation time.Duration
 var elapsedDeviation time.Duration
 
-var elapsedAnalystSummation time.Duration
-var elapsedAnalystVariance time.Duration
-
-var pathFormat = "C:\\Users\\23304161\\source\\Datasets\\electricity\\archive\\%s\\House_1min_halfyear_%d.csv"
+var pathFormat = "C:\\Users\\23304161\\source\\Datasets\\water\\smw\\%s\\House_10sec_1month_%d.csv"
 
 // var pathFormat = "./%s/House_10sec_1month_%d.csv"
-// Check the result
-const float64EqualityThreshold = 1e-0
-const sectionSize = 4096 // element number within a section
-
-var NGoRoutine int = 1 // Default number of Go routines
-var flagCount = 0      // encrypted section number
 
 func main() {
 	start := time.Now()
 
 	loop := 1
-	maximumLenPartyRows := 241920
+	maximumLenPartyRows := 1080 //use block size of 4096=2^12
 	folderName := "200Houses_10s_1month_lowVD"
 
 	householdIDs := []int{}
 	minHouseholdID := 1
-	maxHouseholdID := 1
+	maxHouseholdID := 32
 
 	for householdID := minHouseholdID; householdID <= maxHouseholdID; householdID++ {
 		householdIDs = append(householdIDs, householdID)
 	}
 
 	var err error
-	paramsDef := ckks.PN12QP109CI // block size = 4096
+	paramsDef := ckks.PN11QP54CI
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
 
@@ -122,8 +110,8 @@ func main() {
 	}
 
 	fmt.Println("1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-	fmt.Printf("***** Evaluating Summation time for %d households in thirdparty analyst's side: %s\n", len(householdIDs), time.Duration(elapsedSummation.Nanoseconds()/int64(loop)))
-	fmt.Printf("***** Evaluating Deviation time for %d households in thirdparty analyst's side: %s\n", len(householdIDs), time.Duration(elapsedDeviation.Nanoseconds()/int64(loop)))
+	fmt.Printf("***** Evaluating Summation time for %d blocks in thirdparty analyst's side: %s\n", len(householdIDs), time.Duration(elapsedSummation.Nanoseconds()/int64(loop)))
+	fmt.Printf("***** Evaluating Deviation time for %d blocks in thirdparty analyst's side: %s\n", len(householdIDs), time.Duration(elapsedDeviation.Nanoseconds()/int64(loop)))
 
 	fmt.Println("2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
@@ -139,9 +127,6 @@ func main() {
 	fmt.Printf("*****Amortized Ciphertext Addition Time: %s\n", time.Duration(elapsedAddition.Nanoseconds()/int64(loop)))
 	fmt.Printf("*****Amortized Ciphertext Multiplication Time: %s\n", time.Duration(elapsedMultiplication.Nanoseconds()/int64(loop)))
 	fmt.Printf("*****Amortized Ciphertext Rotation Time: %s\n", time.Duration(elapsedRotation.Nanoseconds()/int64(loop*len(params.GaloisElementsForRowInnerSum()))))
-
-	fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystSummation.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystVariance.Nanoseconds()/int64(loop)))
 
 	fmt.Printf("Main() Done in %s \n", time.Since(start))
 
@@ -176,9 +161,8 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 	// Create each party, and allocate the memory for all the shares that the protocols will need
 	P := genparties(params, folderName, householdIDs)
 
-	//getInputs read the data file
 	// Inputs & expected result, cleartext result
-	globalPartyRows, expSummation, expAverage, expDeviation, plainSum := genInputs(params, P, maximumLenPartyRows) //globalPartyRows rows
+	globalPartyRows, expSummation, expAverage, expDeviation := genInputs(params, P, maximumLenPartyRows) //globalPartyRows rows
 
 	var rlk *rlwe.RelinearizationKey
 	elapsedRKGParty += runTimed(func() {
@@ -198,47 +182,49 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 	//generate ciphertexts
 	encInputsAverage, encInputsNegative, encInputsSummation := encPhase(params, P, tpk, encoder)
 
-	encSummationOuts := make([]*rlwe.Ciphertext, 0)
-	// encAverageOuts := make([]*ckks.Ciphertext, 0)
-	encDeviationOuts := make([]*rlwe.Ciphertext, 0)
+	var encSummationOuts *rlwe.Ciphertext
+	var encAverageOuts *rlwe.Ciphertext
+	var encDeviationOuts *rlwe.Ciphertext
 
-	anaTime1 := time.Now()
 	// summation
-	for _, encInputSummation := range encInputsSummation {
-		elapsedSummation += runTimed(func() {
-			elapsedRotation += runTimedParty(func() {
-				evaluator.InnerSum(encInputSummation, 1, params.Slots(), encInputSummation)
-			}, len(P))
+	elapsedSummation += runTimed(func() {
+		for i, encInputSummation := range encInputsSummation {
+			if i == 0 {
+				encSummationOuts = encInputSummation
+			} else {
+				encSummationOuts = evaluator.AddNew(encSummationOuts, encInputSummation)
+			}
+		}
+
+		elapsedRotation += runTimed(func() {
+			evaluator.InnerSum(encSummationOuts, 1, params.Slots(), encSummationOuts)
 		})
+	})
 
-		encSummationOuts = append(encSummationOuts, encInputSummation)
-	}
-	elapsedAnalystSummation += time.Since(anaTime1)
-
-	anaTime2 := time.Now()
 	// deviation
-	for i, encInputAverage := range encInputsAverage {
-		elapsedDeviation += runTimed(func() {
-			evaluator.InnerSum(encInputAverage, 1, params.Slots(), encInputAverage)
-			encInputAverage.Scale = encInputAverage.Mul(rlwe.NewScale(globalPartyRows))
+	elapsedDeviation += runTimed(func() {
+		for i, _ := range encInputsAverage {
+			encAverageOuts = encSummationOuts.CopyNew()
+			encAverageOuts.Scale = encAverageOuts.Mul(rlwe.NewScale(globalPartyRows))
 
-			// encAverageOuts = append(encAverageOuts, encInputAverage)
+			elapsedAddition += runTimed(func() {
+				evaluator.Add(encInputsNegative[i], encAverageOuts, encInputsNegative[i])
+			})
 
-			elapsedAddition += runTimedParty(func() {
-				evaluator.Add(encInputsNegative[i], encInputAverage, encInputsNegative[i])
-			}, len(P))
-
-			elapsedMultiplication += runTimedParty(func() {
+			elapsedMultiplication += runTimed(func() {
 				evaluator.MulRelin(encInputsNegative[i], encInputsNegative[i], encInputsNegative[i])
-			}, len(P))
+			})
 
-			evaluator.InnerSum(encInputsNegative[i], 1, params.Slots(), encInputsNegative[i])
-			encInputsNegative[i].Scale = encInputsNegative[i].Mul(rlwe.NewScale(globalPartyRows))
-		})
+			if i == 0 {
+				encDeviationOuts = encInputsNegative[i]
+			} else {
+				encDeviationOuts = evaluator.AddNew(encDeviationOuts, encInputsNegative[i])
+			}
 
-		encDeviationOuts = append(encDeviationOuts, encInputsNegative[i])
-	}
-	elapsedAnalystVariance += time.Since(anaTime2)
+		}
+		evaluator.InnerSum(encDeviationOuts, 1, params.Slots(), encDeviationOuts)
+		encDeviationOuts.Scale = encDeviationOuts.Mul(rlwe.NewScale(globalPartyRows))
+	})
 
 	// Decrypt & Check the result
 	l.Println("> Decrypt & Result:>>>>>>>>>>>>>")
@@ -249,39 +235,35 @@ func process(householdIDs []int, maximumLenPartyRows int, folderName string, par
 	ptresSummation := ckks.NewPlaintext(params, params.MaxLevel())
 
 	// print summation
-	for i, _ := range encSummationOuts {
-		decryptor.Decrypt(encSummationOuts[i], ptresSummation)            //ciphertext->plaintext
-		resSummation := encoder.Decode(ptresSummation, params.LogSlots()) //plaintext->complex numbers
-		fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0])+plainSum[i])
-		fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
-		fmt.Println()
-	}
+	decryptor.Decrypt(encSummationOuts, ptresSummation)               //ciphertext->plaintext
+	resSummation := encoder.Decode(ptresSummation, params.LogSlots()) //plaintext->complex numbers
+	fmt.Printf("CKKS Summation=%.6f\t", real(resSummation[0]))
+	fmt.Printf(" <===> Expected Summation=%.6f\t", expSummation)
+	fmt.Println()
 
 	// print deviation
-	for i, _ := range encDeviationOuts {
 
-		elapsedDecParty += runTimedParty(func() {
-			// decryptor.Decrypt(encAverageOuts[i], ptres)            //ciphertext->plaintext
-			decryptor.Decrypt(encDeviationOuts[i], ptresDeviation) //ciphertext->plaintext
-		}, len(P))
+	elapsedDecParty += runTimedParty(func() {
+		// decryptor.Decrypt(encAverageOuts[i], ptres)            //ciphertext->plaintext
+		decryptor.Decrypt(encDeviationOuts, ptresDeviation) //ciphertext->plaintext
+	}, len(P))
 
-		// res := encoder.Decode(ptres, params.LogSlots())
-		resDeviation := encoder.Decode(ptresDeviation, params.LogSlots())
+	// res := encoder.Decode(ptres, params.LogSlots())
+	resDeviation := encoder.Decode(ptresDeviation, params.LogSlots())
 
-		// calculatedAverage := real(res[0])
-		calculatedAverage := expAverage[i]
+	// calculatedAverage := real(res[0])
+	calculatedAverage := expAverage
 
-		fmt.Printf("CKKS Average of Party[%d]=%.6f\t", i, calculatedAverage)
-		fmt.Printf(" <===> Expected Average of Party[%d]=%.6f\t", i, expAverage[i])
-		fmt.Println()
+	fmt.Printf("CKKS Average=%.6f\t", calculatedAverage)
+	fmt.Printf(" <===> Expected Average=%.6f\t", expAverage)
+	fmt.Println()
 
-		//extra value for deviation
-		delta := calculatedAverage * calculatedAverage * float64(len(resDeviation)-globalPartyRows) / float64(globalPartyRows)
+	//extra value for deviation
+	delta := calculatedAverage * calculatedAverage * float64(len(resDeviation)-globalPartyRows) / float64(globalPartyRows)
 
-		fmt.Printf("CKKS Deviation of Party[%d]=%.6f\t", i, real(resDeviation[0])-delta)
-		fmt.Printf(" <===> Expected Deviation of Party[%d]=%.6f\t", i, expDeviation[i])
-		fmt.Println()
-	}
+	fmt.Printf("CKKS Deviation=%.6f\t", real(resDeviation[0])-delta)
+	fmt.Printf(" <===> Expected Deviation=%.6f\t", expDeviation)
+	fmt.Println()
 
 	fmt.Printf("\tDecrypt Time: done %s\n", elapsedDecParty)
 	fmt.Println()
@@ -389,7 +371,6 @@ func resizeCSV(folderName string, id int) []float64 {
 	for _, v := range csv {
 		slices := strings.Split(v, ",")
 		tmpStr := slices[len(slices)-1]
-		tmpStr = strings.Replace(tmpStr, "\r", "", -1)
 		fNum, err := strconv.ParseFloat(tmpStr, 64)
 		if err != nil {
 			panic(err)
@@ -400,137 +381,43 @@ func resizeCSV(folderName string, id int) []float64 {
 	return elements
 }
 
-func getRandom(numberRange int) (randNumber int) {
-	rand.Seed(time.Now().UnixNano())
-	randNumber = rand.Intn(numberRange) //[0, numberRange-1]
-
-	return
-}
-
 //generate inputs of parties
-func genInputs(params ckks.Parameters, P []*party, maximumLenPartyRows int) (globalPartyRows int, expSummation, expAverage, expDeviation, plainSum []float64) {
+func genInputs(params ckks.Parameters, P []*party, maximumLenPartyRows int) (globalPartyRows int, expSummation, expAverage, expDeviation float64) {
 
-	sectionNum := 0
-	randNumber := -1
 	globalPartyRows = -1
-	for pi, po := range P {
+	for _, po := range P {
 		partyRows := resizeCSV(po.folderName, po.id)
 		lenPartyRows := len(partyRows)
-		if maximumLenPartyRows < lenPartyRows {
+		if lenPartyRows > maximumLenPartyRows {
 			lenPartyRows = maximumLenPartyRows
 		}
 
 		if globalPartyRows == -1 {
-			sectionNum = lenPartyRows / sectionSize
-			if lenPartyRows%sectionSize != 0 {
-				sectionNum++
-			}
-			randNumber = getRandom(sectionSize) //[0, randNumber-1]
-			if randNumber == 0 {
-				randNumber = 1 //at least 1
-			}
 			//global setting, run once
 			globalPartyRows = lenPartyRows
-			expSummation = make([]float64, len(P))
-			expAverage = make([]float64, len(P))
-			expDeviation = make([]float64, len(P))
-			plainSum = make([]float64, len(P))
 		} else if globalPartyRows != lenPartyRows {
 			//make sure pi.input[] has the same size
 			err := errors.New("Not all files have the same rows")
 			check(err)
 		}
 
-		po.rawInput = make([]float64, lenPartyRows) //8640 lines
-		po.group = make([]int, sectionSize)         // elements of a section
-		po.flag = make([]int, sectionNum)           //sections
-		po.entropy = make([]float64, sectionNum)    //sections
-		po.transition = make([]int, sectionNum)     //sections
-
-		tmpStr := ""
-		entropySum := 0.0
-		transitionSum := 0
-		transitionInsideSection := 0
-		for i := range po.rawInput {
-			po.rawInput[i] = partyRows[i]
-			expSummation[pi] += po.rawInput[i]
-			if i > 0 && !almostEqual(po.rawInput[i], po.rawInput[i-1]) {
-				transitionInsideSection++
-			}
-			//count transitions of each section
-			tmpStr += fmt.Sprintf("%f", po.rawInput[i])
-			if i%sectionSize == sectionSize-1 || i == len(po.rawInput)-1 {
-				//transition
-				po.transition[i/sectionSize] = transitionInsideSection
-				transitionInsideSection = 0
-				fmt.Printf("po.transition[%d] = %v\n", i/sectionSize, po.transition[i/sectionSize])
-				transitionSum += po.transition[i/sectionSize]
-				//entropy
-				entropyVal, shannonErr := entropy.Shannon(tmpStr)
-				po.entropy[i/sectionSize] = entropyVal
-				check(shannonErr)
-				tmpStr = ""
-				entropySum += po.entropy[i/sectionSize]
-				// fmt.Printf("po.entropy[%d] = %v\n", i/sectionSize, po.entropy[i/sectionSize])
-			}
-		}
-		//transition reduction
-		fmt.Printf("transition remain[%d] = %v\n", -1, transitionSum)
-		for i := 0; i < sectionNum; i++ {
-			max := -1
-			index := -1
-			for j := 0; j < sectionNum; j++ {
-				if po.flag[j] != 1 && po.transition[j] > max {
-					max = po.transition[j]
-					index = j
-				}
-			}
-			po.flag[index] = 1
-			transitionSum -= max
-			fmt.Printf("transition remain[%d] = %v\n", i, transitionSum)
+		po.input = make([]float64, lenPartyRows)
+		for i := range po.input {
+			po.input[i] = partyRows[i]
+			expSummation += po.input[i]
 		}
 
-		//entropy reduction
-		for i := range po.flag {
-			po.flag[i] = 0
+	}
+
+	expAverage = expSummation / float64(globalPartyRows*len(P))
+
+	for _, po := range P {
+		for i := range po.input {
+			temp := po.input[i] - expAverage
+			expDeviation += temp * temp
 		}
-		// fmt.Printf("entropy remain[%d] = %.6f\n", -1, entropySum)
-		for i := 0; i < sectionNum; i++ {
-			max := -1.0
-			index := -1
-			for j := 0; j < sectionNum; j++ {
-				if po.flag[j] != 1 && po.entropy[j] > max {
-					max = po.entropy[j]
-					index = j
-				}
-			}
-			po.flag[index] = 1
-			entropySum -= max
-			// fmt.Printf("entropy remain[%d] = %.6f\n", i, entropySum)
-		}
-
-		expAverage[pi] = expSummation[pi] / float64(globalPartyRows)
-		for i := range po.rawInput {
-			temp := po.rawInput[i] - expAverage[pi]
-			expDeviation[pi] += temp * temp
-		}
-		expDeviation[pi] /= float64(globalPartyRows)
-
-		fff := 0
-		fmt.Print("%v", fff)
-		// po.input = make([]float64, 0)      //flagCount*sectionSize
-		// po.plainInput = make([]float64, 0) //lenPartyRows-flagCount*sectionSize
-		// for i := 0; i < lenPartyRows; i++ {
-		// 	if po.flag[i/sectionSize] == -1 {
-		// 		po.input = append(po.input, po.rawInput[i])
-		// 	} else {
-		// 		plainSum[pi] += po.rawInput[i]
-		// 		po.plainInput = append(po.plainInput, po.rawInput[i])
-		// 	}
-		// }
-
-	} // each person
-
+	}
+	expDeviation /= float64(globalPartyRows * len(P))
 	return
 }
 

@@ -88,7 +88,7 @@ var pathFormat = "C:\\Users\\23304161\\source\\Datasets\\water\\smw\\%s\\House_1
 func main() {
 	start := time.Now()
 
-	loop := 100
+	loop := 1
 	maximumLenPartyRows := 34560 //use block size of 4096=2^12
 	folderName := "200Houses_10s_1month_lowVD"
 
@@ -110,8 +110,8 @@ func main() {
 	}
 
 	fmt.Println("1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-	fmt.Printf("***** Evaluating Summation time for %d households in thirdparty analyst's side: %s\n", len(householdIDs), time.Duration(elapsedSummation.Nanoseconds()/int64(loop)))
-	fmt.Printf("***** Evaluating Deviation time for %d households in thirdparty analyst's side: %s\n", len(householdIDs), time.Duration(elapsedDeviation.Nanoseconds()/int64(loop)))
+	fmt.Printf("***** Evaluating Summation time for %d blocks in thirdparty analyst's side: %s\n", len(householdIDs), time.Duration(elapsedSummation.Nanoseconds()/int64(loop)))
+	fmt.Printf("***** Evaluating Deviation time for %d blocks in thirdparty analyst's side: %s\n", len(householdIDs), time.Duration(elapsedDeviation.Nanoseconds()/int64(loop)))
 
 	fmt.Println("2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 

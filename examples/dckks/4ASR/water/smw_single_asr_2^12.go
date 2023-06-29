@@ -416,8 +416,7 @@ func resizeCSV(folderName string, id int) []float64 {
 	elements := []float64{}
 	for _, v := range csv {
 		slices := strings.Split(v, ",")
-		tmpStr := strings.Replace(slices[len(slices)-1], "\r", "", -1)
-		fNum, err := strconv.ParseFloat(tmpStr, 64)
+		fNum, err := strconv.ParseFloat(slices[len(slices)-1], 64)
 		if err != nil {
 			panic(err)
 		}

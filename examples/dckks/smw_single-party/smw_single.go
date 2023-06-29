@@ -92,19 +92,19 @@ func main() {
 	start := time.Now()
 
 	loop := 1
-	maximumLenPartyRows := 8640
+	maximumLenPartyRows := 8640 //17280(galEl key 5^16384 missing), 8640, 4320, 2160(variance wrong), 1080(variance wrong), 540(addition wrong)
 	folderName := "200Houses_10s_1month_highVD"
 
 	householdIDs := []int{}
 	minHouseholdID := 1
-	maxHouseholdID := 5
+	maxHouseholdID := 2
 
 	for householdID := minHouseholdID; householdID <= maxHouseholdID; householdID++ {
 		householdIDs = append(householdIDs, householdID)
 	}
 
 	var err error
-	paramsDef := ckks.PN14QP438CI
+	paramsDef := ckks.PN14QP438CI //PN15QP880CI(galEl key 5^16384 missing), PN14QP438CI, PN13QP218CI, PN12QP109CI(variance wrong), PN11QP54CI(variance wrong), PN10QP27CI(addition wrong)
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
 

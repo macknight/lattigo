@@ -79,6 +79,24 @@ var (
 		LogScale: 45,
 	}
 
+	// self-defined,
+	PN10QP27CI = ParametersLiteral{
+		LogN:     10,
+		LogQ:     []int{13},
+		LogP:     []int{14},
+		RingType: ring.ConjugateInvariant,
+		LogScale: 13,
+	}
+
+	// self-defined,
+	PN11QP54CI = ParametersLiteral{
+		LogN:     11,
+		LogQ:     []int{18, 18}, // 18 + 18
+		LogP:     []int{18},     // 18
+		RingType: ring.ConjugateInvariant,
+		LogScale: 18,
+	}
+
 	// PN12QP109CI is a default parameter set for logN=12 and logQP=109
 	PN12QP109CI = ParametersLiteral{
 		LogN:     12,
