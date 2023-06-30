@@ -20,7 +20,7 @@ import (
 )
 
 func almostEqual(a, b float64) bool {
-	return math.Abs(a-b) <= transitionEqualityThreshold
+	return math.Abs(a-b) <= float64(transitionEqualityThreshold)
 }
 
 func check(err error) {
@@ -86,24 +86,27 @@ type task struct {
 	elapsedtask time.Duration
 }
 
-const pathFormat = "C:\\Users\\23304161\\source\\Datasets\\water\\swm_trialA_1K\\households_%d"
-const fileFormat = "C:\\Users\\23304161\\source\\Datasets\\water\\swm_trialA_1K\\households_%d\\%s"
+const waterPathFormat = "C:\\Users\\23304161\\source\\Datasets\\water\\swm_trialA_1K\\households_%d"
+const electricityPathFormat = "C:\\Users\\23304161\\source\\Datasets\\electricity\\london\\halfhourly_dataset\\households_%d"
 const MAX_PARTY_ROWS = 20480 //241920
-const transitionEqualityThreshold = 100
-const sectionSize = 8192 // element number within a section
+const sectionSize = 8192     // element number within a section
+const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
+const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
+const STRATEGY_RANDOM = 3
+const DATASET_WATER = 1
+const DATASET_ELECTRICITY = 2
+const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
+const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var maxHouseholdsNumber = 1
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
-var sectionNum int
 var globalPartyRows = -1
 var performanceLoops = 1
-
+var currentDataset = 1
 var currentStrategy = 1
-
-const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
-const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
-const STRATEGY_RANDOM = 3
+var transitionEqualityThreshold int
+var sectionNum int
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
@@ -119,6 +122,15 @@ func main() {
 		fmt.Println("Error:", err)
 	}
 
+	var pathFormat string
+	if currentDataset == DATASET_WATER {
+		pathFormat = waterPathFormat
+		transitionEqualityThreshold = WATER_TRANSITION_EQUALITY_THRESHOLD
+	} else { //electricity
+		pathFormat = electricityPathFormat
+		transitionEqualityThreshold = ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD
+	}
+
 	folder := fmt.Sprintf(pathFormat, MAX_PARTY_ROWS)
 	err = filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -126,8 +138,8 @@ func main() {
 			return err
 		}
 		if !info.IsDir() {
-			fileName := filepath.Base(path)
-			fileList = append(fileList, fileName)
+			// fileName := filepath.Base(path)
+			fileList = append(fileList, path)
 			// fmt.Printf("filename: %s\n", fileName)
 		}
 		return nil
@@ -455,9 +467,9 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 	for i, _ := range encSummationOuts {
 		if encSummationOuts[i] != nil {
 			decryptor.Decrypt(encSummationOuts[i], ptresSummation) //ciphertext->plaintext
-			resSummation := encoder.Decode(ptresSummation, params.LogSlots())
-			fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0])+plainSum[i])
-			fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
+			encoder.Decode(ptresSummation, params.LogSlots())      //resSummation :=
+			// fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0])+plainSum[i])
+			// fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
 			fmt.Println()
 		}
 	}
@@ -472,21 +484,21 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			}, len(P))
 
 			// res := encoder.Decode(ptres, params.LogSlots())
-			resDeviation := encoder.Decode(ptresDeviation, params.LogSlots())
+			encoder.Decode(ptresDeviation, params.LogSlots()) //resDeviation :=
 
 			// calculatedAverage := real(res[0])
-			calculatedAverage := expAverage[i]
+			// calculatedAverage := expAverage[i]
 
-			fmt.Printf("CKKS Average of Party[%d]=%.6f\t", i, calculatedAverage)
-			fmt.Printf(" <===> Expected Average of Party[%d]=%.6f\t", i, expAverage[i])
-			fmt.Println()
+			// fmt.Printf("CKKS Average of Party[%d]=%.6f\t", i, calculatedAverage)
+			// fmt.Printf(" <===> Expected Average of Party[%d]=%.6f\t", i, expAverage[i])
+			// fmt.Println()
 
 			//extra value for deviation
 			// delta := calculatedAverage * calculatedAverage * float64(len(resDeviation)-globalPartyRows) / float64(globalPartyRows)
 
-			fmt.Printf("CKKS Deviation of Party[%d]=%.6f\t", i, real(resDeviation[0])) //real(resDeviation[0])-delta
-			fmt.Printf(" <===> Expected Deviation of Party[%d]=%.6f\t", i, expDeviation[i])
-			fmt.Println()
+			// fmt.Printf("CKKS Deviation of Party[%d]=%.6f\t", i, real(resDeviation[0])) //real(resDeviation[0])-delta
+			// fmt.Printf(" <===> Expected Deviation of Party[%d]=%.6f\t", i, expDeviation[i])
+			// fmt.Println()
 		}
 	}
 	fmt.Printf("\tDecrypt Time: done %s\n", elapsedDecParty)
@@ -586,9 +598,7 @@ func ReadCSV(path string) []string {
 
 //trim csv
 func resizeCSV(filename string) []float64 {
-
-	filepath := fmt.Sprintf(fileFormat, MAX_PARTY_ROWS, filename)
-	csv := ReadCSV(filepath)
+	csv := ReadCSV(filename)
 
 	elements := []float64{}
 	for _, v := range csv {
