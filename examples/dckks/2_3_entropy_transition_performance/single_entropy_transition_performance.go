@@ -89,7 +89,7 @@ type task struct {
 const waterPathFormat = "C:\\Users\\23304161\\source\\Datasets\\water\\swm_trialA_1K\\households_%d"
 const electricityPathFormat = "C:\\Users\\23304161\\source\\Datasets\\electricity\\london\\halfhourly_dataset\\households_%d"
 const MAX_PARTY_ROWS = 20480 //241920
-const sectionSize = 8192     // element number within a section
+const sectionSize = 2048     // element number within a section
 const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
 const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
 const STRATEGY_RANDOM = 3
@@ -115,7 +115,7 @@ func main() {
 
 	fileList := []string{}
 	var err error
-	paramsDef := ckks.PN13QP218CI // block size = 4096
+	paramsDef := ckks.PN11QP54CI // block size = 4096
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
 	if err != nil {
