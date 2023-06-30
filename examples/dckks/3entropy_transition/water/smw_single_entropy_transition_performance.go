@@ -90,14 +90,20 @@ const pathFormat = "C:\\Users\\23304161\\source\\Datasets\\water\\swm_trialA_1K\
 const fileFormat = "C:\\Users\\23304161\\source\\Datasets\\water\\swm_trialA_1K\\households_%d\\%s"
 const MAX_PARTY_ROWS = 20480 //241920
 const transitionEqualityThreshold = 100
-const sectionSize = 2048 // element number within a section
+const sectionSize = 8192 // element number within a section
 
-var maxHouseholdsNumber = 80
+var maxHouseholdsNumber = 1
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var sectionNum int
 var globalPartyRows = -1
 var performanceLoops = 1
+
+var currentStrategy = 1
+
+const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
+const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
+const STRATEGY_RANDOM = 3
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
@@ -106,7 +112,7 @@ func main() {
 
 	fileList := []string{}
 	var err error
-	paramsDef := ckks.PN11QP54CI // block size = 4096
+	paramsDef := ckks.PN13QP218CI // block size = 4096
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
 	if err != nil {
@@ -143,9 +149,6 @@ func process(fileList []string, params ckks.Parameters) {
 	//getInputs read the data file
 	// Inputs & expected result, cleartext result
 	expSummation, expAverage, expDeviation, minEntropy, maxEntropy, entropySum, transitionSum := genInputs(P)
-	_ = expSummation
-	_ = expAverage
-	_ = expDeviation
 	histogram := genHistogram(P, minEntropy, maxEntropy)
 	fmt.Printf(">>>>>>>Entropy Histograme:\n")
 	for i := 0; i < len(histogram); i++ {
@@ -153,33 +156,89 @@ func process(fileList []string, params ckks.Parameters) {
 	}
 
 	//mark blocks needing to be encrypted
-	fmt.Printf("transitionEqualityThreshold: %d\n", transitionEqualityThreshold)
 	fmt.Printf("entropy remain[initial] = %.3f; transition remain[initial] = %d\n", entropySum, transitionSum)
 
 	encryptedSectionNum = sectionNum
 
+	var plainSum []float64
+	var entropyReduction float64
+	var transitionReduction int
 	for en := 0; en < encryptedSectionNum; en++ {
-		plainSum, entropyReduction, transitionReduction := markEncryptedSections(en, P, entropySum, transitionSum)
-		_ = plainSum
+		fmt.Printf("------------------------------------------encryptedSectionNum = %d\n", en)
+
+		if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
+			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByGlobalEntropyHightoLow(en, P, entropySum, transitionSum)
+		} else if currentStrategy == STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW {
+			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByHouseholdEntropyHightoLow(en, P, entropySum, transitionSum)
+		} else { //STRATEGY_RANDOM
+			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByRandom(en, P, entropySum, transitionSum)
+		}
+
 		entropySum -= entropyReduction
 		transitionSum -= transitionReduction
+
 		//performance by loops
 		for performanceLoop := 0; performanceLoop < performanceLoops; performanceLoop++ {
-			// fmt.Printf("<<<encryptedSectionNum = %d, performanceLoop = %d\n", en, performanceLoop)
-			// doHomomorphicOperations(params, P, expSummation, expAverage, expDeviation, plainSum)
+			fmt.Printf("<<<encryptedSectionNum = [%d], performanceLoop = [%d]\n", en, performanceLoop)
+			doHomomorphicOperations(params, P, expSummation, expAverage, expDeviation, plainSum)
 		}
 		//performance prints
-		// fmt.Printf("------------------------------------------encryptedSectionNum = %d\n", en)
-		// showHomomorphicMeasure(performanceLoops, params)
+		showHomomorphicMeasure(performanceLoops, params)
 	}
 }
 
 //main end
-
-func markEncryptedSections(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transtionReduction int) {
+func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
 
 	entropyReduction = 0.0
-	transtionReduction = 0
+	transitionReduction = 0
+	plainSum = make([]float64, len(P))
+
+	for _, po := range P {
+		if en == 0 {
+			for i := 0; i < len(po.flag); i++ {
+				po.flag[i] = i
+			}
+		}
+		r := getRandom(encryptedSectionNum - en)
+		index := po.flag[r]
+		entropyReduction := po.entropy[index]
+		transitionReduction := po.transition[index]
+		po.flag[r] = po.flag[encryptedSectionNum-1-en]
+		po.flag[encryptedSectionNum-1-en] = index
+		entropySum -= entropyReduction
+		transitionSum -= transitionReduction
+	} // mark randomly
+
+	fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
+
+	//for each threshold, prepare plainInput&input
+	for pi, po := range P {
+		po.input = make([][]float64, 0)
+		po.plainInput = make([]float64, 0)
+		k := 0
+		for j := 0; j < globalPartyRows; j++ {
+			if j%sectionSize == 0 && j/sectionSize > len(po.flag)-(en+1)-1 {
+				po.input = append(po.input, make([]float64, sectionSize))
+				k++
+			}
+
+			if j/sectionSize > len(po.flag)-(en+1)-1 {
+				po.input[k-1][j%sectionSize] = po.rawInput[j]
+			} else {
+				plainSum[pi] += po.rawInput[j]
+				po.plainInput = append(po.plainInput, po.rawInput[j])
+			}
+		}
+	}
+	return
+}
+
+func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
+
+	entropyReduction = 0.0
+	transitionReduction = 0
+	plainSum = make([]float64, len(P))
 
 	for k := 0; k < len(P); k++ {
 		max := -1.0
@@ -196,14 +255,56 @@ func markEncryptedSections(en int, P []*party, entropySum float64, transitionSum
 		}
 		P[pIndex].flag[sIndex] = 1
 		entropyReduction += P[pIndex].entropy[sIndex]
-		transtionReduction += P[pIndex].transition[sIndex]
+		transitionReduction += P[pIndex].transition[sIndex]
 	}
 
-	fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transtionReduction, transtionReduction)
+	fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
 
 	//for each threshold, prepare plainInput&input
 	for pi, po := range P {
-		plainSum = make([]float64, len(P))
+		po.input = make([][]float64, 0)
+		po.plainInput = make([]float64, 0)
+		k := 0
+		for j := 0; j < globalPartyRows; j++ {
+			if j%sectionSize == 0 && po.flag[j/sectionSize] == 1 {
+				po.input = append(po.input, make([]float64, sectionSize))
+				k++
+			}
+
+			if po.flag[j/sectionSize] == 1 {
+				po.input[k-1][j%sectionSize] = po.rawInput[j]
+			} else {
+				plainSum[pi] += po.rawInput[j]
+				po.plainInput = append(po.plainInput, po.rawInput[j])
+			}
+		}
+	}
+	return
+}
+
+func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
+	entropyReduction = 0.0
+	transitionReduction = 0
+	plainSum = make([]float64, len(P))
+
+	for _, po := range P {
+		index := 0
+		max := -1.0
+		for j := 0; j < sectionNum; j++ {
+			if po.flag[j] != 1 && po.entropy[j] > max {
+				max = po.entropy[j]
+				index = j
+			}
+		}
+		po.flag[index] = 1 //po.flag has "sectionNumber" elements
+		entropyReduction += po.entropy[index]
+		transitionReduction += po.transition[index]
+	} // mark one block for each person
+
+	fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
+
+	//for each threshold, prepare plainInput&input
+	for pi, po := range P {
 		po.input = make([][]float64, 0)
 		po.plainInput = make([]float64, 0)
 		k := 0
@@ -278,117 +379,122 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 	encoder := ckks.NewEncoder(params)
 	evaluator := ckks.NewEvaluator(params, rlwe.EvaluationKey{Rlk: rlk, Rtks: rotk})
 
-	//generate ciphertexts
-	encInputsNegative, encInputsSummation := encPhase(params, P, tpk, encoder)
+	//generate ciphertexts====================================================
+	encInputsSummation, encInputsNegative := encPhase(params, P, tpk, encoder)
 
-	// summation
-	encSummationOuts := make([]*rlwe.Ciphertext, 0)
+	// summation calculation====================================================
+	encSummationOuts := make([]*rlwe.Ciphertext, len(P))
 	anaTime1 := time.Now()
 	var tmpCiphertext *rlwe.Ciphertext
-	for i, encInputSummation := range encInputsSummation {
-		if i%encryptedSectionNum == 0 {
-			tmpCiphertext = encInputSummation
-		} else {
-			elapsedSummation += runTimed(func() {
-				elapsedRotation += runTimedParty(func() {
-					evaluator.Add(tmpCiphertext, encInputSummation, tmpCiphertext)
-					if i%encryptedSectionNum == encryptedSectionNum-1 {
-						evaluator.InnerSum(tmpCiphertext, 1, params.Slots(), tmpCiphertext)
-					}
+	for i, _ := range encInputsSummation {
+		for j, _ := range encInputsSummation[i] {
+			if j == 0 {
+				tmpCiphertext = encInputsSummation[i][j]
+			} else {
+				elapsedSummation += runTimedParty(func() {
+					evaluator.Add(tmpCiphertext, encInputsSummation[i][j], tmpCiphertext)
 				}, len(P))
-			})
-		}
-		if i%encryptedSectionNum == encryptedSectionNum-1 {
-			encSummationOuts = append(encSummationOuts, tmpCiphertext)
-			// encSummationOuts[i/encryptedSectionNum] = tmpCiphertext
-		}
-	}
+			}
+
+			if j == len(encInputsSummation[i])-1 {
+				elapsedRotation += runTimedParty(func() {
+					evaluator.InnerSum(tmpCiphertext, 1, params.Slots(), tmpCiphertext)
+				}, len(P))
+				encSummationOuts[i] = tmpCiphertext
+			}
+		} //j
+	} //i
 	elapsedAnalystSummation += time.Since(anaTime1)
 
-	// deviation
-	encDeviationOuts := make([]*rlwe.Ciphertext, 0)
+	// deviation calculation====================================================
+	encDeviationOuts := make([]*rlwe.Ciphertext, len(P))
 	anaTime2 := time.Now()
-	for i, encInputNegative := range encInputsNegative {
-		if i%encryptedSectionNum == 0 {
-			tmpCiphertext = encSummationOuts[i/encryptedSectionNum].CopyNew()
-			tmpCiphertext.Scale = tmpCiphertext.Mul(rlwe.NewScale(globalPartyRows))
-		}
-		elapsedDeviation += runTimed(func() {
-			// encAverageOuts = append(encAverageOuts, encInputAverage)
-			elapsedAddition += runTimedParty(func() {
-				evaluator.Add(encInputNegative, tmpCiphertext, encInputNegative)
-			}, len(P))
+	var avergeCiphertext *rlwe.Ciphertext
+	for i, _ := range encInputsNegative {
+		for j, _ := range encInputsNegative[i] {
+			if j == 0 {
+				avergeCiphertext = encSummationOuts[i].CopyNew()
+				avergeCiphertext.Scale = avergeCiphertext.Mul(rlwe.NewScale(globalPartyRows))
+			}
+			elapsedDeviation += runTimed(func() {
+				elapsedAddition += runTimedParty(func() {
+					evaluator.Add(encInputsNegative[i][j], avergeCiphertext, encInputsNegative[i][j])
+				}, len(P))
 
-			elapsedMultiplication += runTimedParty(func() {
-				evaluator.MulRelin(encInputNegative, encInputNegative, encInputNegative)
-			}, len(P))
+				elapsedMultiplication += runTimedParty(func() {
+					evaluator.MulRelin(encInputsNegative[i][j], encInputsNegative[i][j], encInputsNegative[i][j])
+				}, len(P))
 
-			if i%encryptedSectionNum == 0 {
-				tmpCiphertext = encInputNegative
-			} else {
-				elapsedSummation += runTimed(func() {
+				if j == 0 {
+					tmpCiphertext = encInputsNegative[i][j]
+				} else {
+					elapsedSummation += runTimed(func() {
+						elapsedRotation += runTimedParty(func() {
+							evaluator.Add(tmpCiphertext, encInputsNegative[i][j], tmpCiphertext)
+						}, len(P))
+					})
+				}
+
+				if j == len(encInputsNegative[i])-1 {
 					elapsedRotation += runTimedParty(func() {
-						evaluator.Add(tmpCiphertext, encInputNegative, tmpCiphertext)
-						if i%encryptedSectionNum == encryptedSectionNum-1 {
-							evaluator.InnerSum(tmpCiphertext, 1, params.Slots(), tmpCiphertext)
-							tmpCiphertext.Scale = tmpCiphertext.Mul(rlwe.NewScale(globalPartyRows))
-						}
+						evaluator.InnerSum(tmpCiphertext, 1, params.Slots(), tmpCiphertext)
 					}, len(P))
-				})
-			}
-			if i%encryptedSectionNum == encryptedSectionNum-1 {
-				encDeviationOuts = append(encDeviationOuts, tmpCiphertext)
-				// encDeviationOuts[i/encryptedSectionNum] = tmpCiphertext
-			}
-		})
-	}
+					tmpCiphertext.Scale = tmpCiphertext.Mul(rlwe.NewScale(globalPartyRows))
+					encDeviationOuts[i] = tmpCiphertext
+				}
+			})
+		} //j
+	} //i
 	elapsedAnalystVariance += time.Since(anaTime2)
 
-	// Decrypt & Check the result
+	// Decrypt & Print====================================================
 	fmt.Println("> Decrypt & Result:>>>>>>>>>>>>>")
 
 	// print summation
 	ptresSummation := ckks.NewPlaintext(params, params.MaxLevel())
 	for i, _ := range encSummationOuts {
-		decryptor.Decrypt(encSummationOuts[i], ptresSummation) //ciphertext->plaintext
-		encoder.Decode(ptresSummation, params.LogSlots())      //resSummation :=
-		// fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0])+plainSum[i])
-		// fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
-		// fmt.Println()
+		if encSummationOuts[i] != nil {
+			decryptor.Decrypt(encSummationOuts[i], ptresSummation) //ciphertext->plaintext
+			resSummation := encoder.Decode(ptresSummation, params.LogSlots())
+			fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0])+plainSum[i])
+			fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
+			fmt.Println()
+		}
 	}
 
 	// print deviation
 	ptresDeviation := ckks.NewPlaintext(params, params.MaxLevel())
 	for i, _ := range encDeviationOuts {
+		if encDeviationOuts[i] != nil {
+			elapsedDecParty += runTimedParty(func() {
+				// decryptor.Decrypt(encAverageOuts[i], ptres)            //ciphertext->plaintext
+				decryptor.Decrypt(encDeviationOuts[i], ptresDeviation) //ciphertext->plaintext
+			}, len(P))
 
-		elapsedDecParty += runTimedParty(func() {
-			// decryptor.Decrypt(encAverageOuts[i], ptres)            //ciphertext->plaintext
-			decryptor.Decrypt(encDeviationOuts[i], ptresDeviation) //ciphertext->plaintext
-		}, len(P))
+			// res := encoder.Decode(ptres, params.LogSlots())
+			resDeviation := encoder.Decode(ptresDeviation, params.LogSlots())
 
-		// res := encoder.Decode(ptres, params.LogSlots())
-		encoder.Decode(ptresDeviation, params.LogSlots()) //resDeviation :=
+			// calculatedAverage := real(res[0])
+			calculatedAverage := expAverage[i]
 
-		// calculatedAverage := real(res[0])
-		// calculatedAverage := expAverage[i]
+			fmt.Printf("CKKS Average of Party[%d]=%.6f\t", i, calculatedAverage)
+			fmt.Printf(" <===> Expected Average of Party[%d]=%.6f\t", i, expAverage[i])
+			fmt.Println()
 
-		// fmt.Printf("CKKS Average of Party[%d]=%.6f\t", i, calculatedAverage)
-		// fmt.Printf(" <===> Expected Average of Party[%d]=%.6f\t", i, expAverage[i])
-		// fmt.Println()
+			//extra value for deviation
+			// delta := calculatedAverage * calculatedAverage * float64(len(resDeviation)-globalPartyRows) / float64(globalPartyRows)
 
-		//extra value for deviation
-		// delta := calculatedAverage * calculatedAverage * float64(len(resDeviation)-globalPartyRows) / float64(globalPartyRows)
-
-		// fmt.Printf("CKKS Deviation of Party[%d]=%.6f\t", i, real(resDeviation[0])-delta)
-		// fmt.Printf(" <===> Expected Deviation of Party[%d]=%.6f\t", i, expDeviation[i])
-		// fmt.Println()
+			fmt.Printf("CKKS Deviation of Party[%d]=%.6f\t", i, real(resDeviation[0])) //real(resDeviation[0])-delta
+			fmt.Printf(" <===> Expected Deviation of Party[%d]=%.6f\t", i, expDeviation[i])
+			fmt.Println()
+		}
 	}
 	fmt.Printf("\tDecrypt Time: done %s\n", elapsedDecParty)
 	fmt.Println()
 
 	//print result
 	// visibleNum := 4
-	fmt.Println("> Parties:")
+	// fmt.Println("> Parties:")
 	//original data
 	// for i, pi := range P {
 	// 	fmt.Printf("Party %3d(%d):\t\t", i, len(pi.input))
@@ -402,15 +508,10 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 
 }
 
-func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ckks.Encoder) (encInputsNegative, encInputsSummation []*rlwe.Ciphertext) {
+func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ckks.Encoder) (encInputsSummation, encInputsNegative [][]*rlwe.Ciphertext) {
 
-	encInputsNegative = make([]*rlwe.Ciphertext, len(P)*encryptedSectionNum)
-	encInputsSummation = make([]*rlwe.Ciphertext, len(P)*encryptedSectionNum)
-
-	for i := range encInputsSummation {
-		encInputsNegative[i] = ckks.NewCiphertext(params, 1, params.MaxLevel())
-		encInputsSummation[i] = ckks.NewCiphertext(params, 1, params.MaxLevel())
-	}
+	encInputsSummation = make([][]*rlwe.Ciphertext, len(P))
+	encInputsNegative = make([][]*rlwe.Ciphertext, len(P))
 
 	// Each party encrypts its input vector
 	fmt.Println("> Encrypt Phase<<<<<<<<<<<<<<<<<<")
@@ -418,27 +519,34 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 	pt := ckks.NewPlaintext(params, params.MaxLevel())
 
 	elapsedEncryptParty += runTimedParty(func() {
-		for i, pi := range P {
-			for j, _ := range pi.input {
-				encoder.Encode(pi.input[j], pt, params.LogSlots())
-				encryptor.Encrypt(pt, encInputsSummation[i*encryptedSectionNum+j]) //Encrypt
-				//turn pi.input to negative
-				for s, _ := range pi.input {
-					for t, _ := range pi.input[s] {
-						pi.input[s][t] *= -1
-					}
+		for pi, po := range P {
+			for j, _ := range po.input {
+				if j == 0 {
+					encInputsSummation[pi] = make([]*rlwe.Ciphertext, 0)
+					encInputsNegative[pi] = make([]*rlwe.Ciphertext, 0)
 				}
-				encoder.Encode(pi.input[j], pt, params.LogSlots())
-				encryptor.Encrypt(pt, encInputsNegative[i*encryptedSectionNum+j]) //Encrypt
-				////turn pi.input to positive
-				for s, _ := range pi.input {
-					for t, _ := range pi.input[s] {
-						pi.input[s][t] *= -1
-					}
+				//Encrypt
+				encoder.Encode(po.input[j], pt, params.LogSlots())
+				tmpCiphertext := ckks.NewCiphertext(params, 1, params.MaxLevel())
+				encryptor.Encrypt(pt, tmpCiphertext)
+				encInputsSummation[pi] = append(encInputsSummation[pi], tmpCiphertext)
+
+				//turn po.input to negative
+				for k, _ := range po.input[j] {
+					po.input[j][k] *= -1
+				}
+				//Encrypt
+				encoder.Encode(po.input[j], pt, params.LogSlots())
+				tmpCiphertext = ckks.NewCiphertext(params, 1, params.MaxLevel())
+				encryptor.Encrypt(pt, tmpCiphertext)
+				encInputsNegative[pi] = append(encInputsNegative[pi], tmpCiphertext)
+				////turn po.input to positive
+				for k, _ := range po.input[j] {
+					po.input[j][k] *= -1
 				}
 			}
 		}
-	}, 2*len(P)) //3 encryption in function
+	}, 2*len(P)) //2 encryption in function
 
 	fmt.Printf("\tdone  %s\n", elapsedEncryptParty)
 
