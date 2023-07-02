@@ -199,11 +199,13 @@ func process(fileList []string, params ckks.Parameters) {
 		entropySum -= entropyReduction
 		transitionSum -= transitionReduction
 
+		fmt.Printf("<<<beging---encryptedSectionNum = [%d]\n", en)
+
 		memberIdentificationAttack(P) //under current partial encryption
 
 		//HE performance by loops
 		for performanceLoop := 0; performanceLoop < performanceLoops; performanceLoop++ {
-			fmt.Printf("<<<encryptedSectionNum = [%d], performanceLoop = [%d]\n", en, performanceLoop)
+			fmt.Printf("<<<performanceLoop = [%d], encryptedSectionNum = [%d]\n", performanceLoop, en)
 			doHomomorphicOperations(params, P, expSummation, expAverage, expDeviation, plainSum)
 		}
 		//performance prints
