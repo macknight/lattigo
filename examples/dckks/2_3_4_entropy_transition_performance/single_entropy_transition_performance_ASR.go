@@ -180,7 +180,8 @@ func process(fileList []string, params ckks.Parameters) {
 	}
 
 	//mark blocks needing to be encrypted
-	fmt.Printf("entropy remain[initial] = %.3f; transition remain[initial] = %d\n", entropySum, transitionSum)
+	fmt.Printf("threshold = %.1f, entropy remain = %.3f; transition remain = %d\n", 0.0, entropySum, transitionSum)
+
 	encryptedSectionNum = sectionNum
 	var plainSum []float64
 	var entropyReduction float64
@@ -302,7 +303,7 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 		transitionSum -= transitionReduction
 	} // mark randomly
 
-	fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
+	fmt.Printf("threshold = %.1f, entropy remain = %.3f (diff: %.3f), transition remain = %d (diff: %d)\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, entropyReduction, transitionSum-transitionReduction, transitionReduction)
 
 	//for each threshold, prepare plainInput&input
 	for pi, po := range P {
@@ -350,7 +351,7 @@ func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySu
 		transitionReduction += P[pIndex].transition[sIndex]
 	}
 
-	fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
+	fmt.Printf("threshold = %.1f, entropy remain = %.3f (diff: %.3f), transition remain = %d (diff: %d)\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, entropyReduction, transitionSum-transitionReduction, transitionReduction)
 
 	//for each threshold, prepare plainInput&input
 	for pi, po := range P {
@@ -393,7 +394,7 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 		transitionReduction += po.transition[index]
 	} // mark one block for each person
 
-	fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
+	fmt.Printf("threshold = %.1f, entropy remain = %.3f (diff: %.3f), transition remain = %d (diff: %d)\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, entropyReduction, transitionSum-transitionReduction, transitionReduction)
 
 	//for each threshold, prepare plainInput&input
 	for pi, po := range P {
