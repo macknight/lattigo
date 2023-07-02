@@ -551,7 +551,7 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			encoder.Decode(ptresSummation, params.LogSlots())      //resSummation :=
 			// fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0])+plainSum[i])
 			// fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
-			fmt.Println()
+			// fmt.Println()
 		}
 	}
 
@@ -583,7 +583,7 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 		}
 	}
 	fmt.Printf("\tDecrypt Time: done %s\n", elapsedDecParty)
-	fmt.Println()
+	// fmt.Println()
 
 	//print result
 	// visibleNum := 4
