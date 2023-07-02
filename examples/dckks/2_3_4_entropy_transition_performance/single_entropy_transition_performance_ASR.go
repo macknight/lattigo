@@ -303,7 +303,7 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 		transitionSum -= transitionReduction
 	} // mark randomly
 
-	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropyReduction, transitionReduction)
+	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum, transitionSum)
 
 	//for each threshold, prepare plainInput&input
 	for pi, po := range P {
@@ -351,7 +351,7 @@ func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySu
 		transitionReduction += P[pIndex].transition[sIndex]
 	}
 
-	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropyReduction, transitionReduction)
+	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum, transitionSum)
 
 	//for each threshold, prepare plainInput&input
 	for pi, po := range P {
@@ -394,7 +394,7 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 		transitionReduction += po.transition[index]
 	} // mark one block for each person
 
-	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropyReduction, transitionReduction)
+	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum, transitionSum)
 
 	//for each threshold, prepare plainInput&input
 	for pi, po := range P {
