@@ -102,13 +102,13 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
-var attackLoop = 100
-var maxHouseholdsNumber = 1
+var attackLoop = 1
+var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
 var performanceLoops = 1
-var currentDataset = 1  //water(1),electricity(2)
+var currentDataset = 2  //water(1),electricity(2)
 var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
 var transitionEqualityThreshold int
 var sectionNum int
@@ -176,7 +176,7 @@ func process(fileList []string, params ckks.Parameters) {
 	histogram := genHistogram(P, minEntropy, maxEntropy)
 	fmt.Printf(">>>>>>>Entropy Histograme:\n")
 	for i := 0; i < len(histogram); i++ {
-		fmt.Printf("[%d]: %d\n", i, histogram[i])
+		fmt.Printf("%.3f,%d\n", float64(i)/20+0.025, histogram[i])
 	}
 
 	//mark blocks needing to be encrypted
