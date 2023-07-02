@@ -295,12 +295,10 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 		}
 		r := getRandom(encryptedSectionNum - en)
 		index := po.flag[r]
-		entropyReduction := po.entropy[index]
-		transitionReduction := po.transition[index]
+		entropyReduction += po.entropy[index]
+		transitionReduction += po.transition[index]
 		po.flag[r] = po.flag[encryptedSectionNum-1-en]
 		po.flag[encryptedSectionNum-1-en] = index
-		entropySum -= entropyReduction
-		transitionSum -= transitionReduction
 	} // mark randomly
 
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
