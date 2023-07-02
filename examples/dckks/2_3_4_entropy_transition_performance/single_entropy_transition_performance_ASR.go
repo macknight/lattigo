@@ -488,8 +488,10 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			}
 
 			if j == len(encInputsSummation[i])-1 {
-				elapsedRotation += runTimedParty(func() {
-					evaluator.InnerSum(tmpCiphertext, 1, params.Slots(), tmpCiphertext)
+				elapsedSummation += runTimedParty(func() {
+					elapsedRotation += runTimedParty(func() {
+						evaluator.InnerSum(tmpCiphertext, 1, params.Slots(), tmpCiphertext)
+					}, len(P))
 				}, len(P))
 				encSummationOuts[i] = tmpCiphertext
 			}
@@ -519,11 +521,9 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 				if j == 0 {
 					tmpCiphertext = encInputsNegative[i][j]
 				} else {
-					elapsedSummation += runTimed(func() {
-						elapsedRotation += runTimedParty(func() {
-							evaluator.Add(tmpCiphertext, encInputsNegative[i][j], tmpCiphertext)
-						}, len(P))
-					})
+					elapsedRotation += runTimedParty(func() {
+						evaluator.Add(tmpCiphertext, encInputsNegative[i][j], tmpCiphertext)
+					}, len(P))
 				}
 
 				if j == len(encInputsNegative[i])-1 {
