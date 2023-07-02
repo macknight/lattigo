@@ -105,7 +105,7 @@ var maxHouseholdsNumber = 1
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
-var performanceLoops = 1
+var performanceLoops = 1000
 var currentDataset = 1  //water(1),electricity(2)
 var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
 var transitionEqualityThreshold int
@@ -350,20 +350,20 @@ func showHomomorphicMeasure(loop int, params ckks.Parameters) {
 	fmt.Println("2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 	//public key & relinearization key & rotation key
-	fmt.Printf("*****Amortized SKG Time: %s\n", time.Duration(elapsedSKGParty.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized PKG Time: %s\n", time.Duration(elapsedPKGParty.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized RKG Time: %s\n", time.Duration(elapsedRKGParty.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized RTG Time: %s\n", time.Duration(elapsedRTGParty.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized SKG Time: %s\n", time.Duration(elapsedSKGParty.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized PKG Time: %s\n", time.Duration(elapsedPKGParty.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized RKG Time: %s\n", time.Duration(elapsedRKGParty.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized RTG Time: %s\n", time.Duration(elapsedRTGParty.Nanoseconds()/int64(loop)))
 
-	//single operation, independent of households' size
-	fmt.Printf("*****Amortized Encrypt Time: %s\n", time.Duration(elapsedEncryptParty.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Decrypt Time: %s\n", time.Duration(elapsedDecParty.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Ciphertext Addition Time: %s\n", time.Duration(elapsedAddition.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Ciphertext Multiplication Time: %s\n", time.Duration(elapsedMultiplication.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Ciphertext Rotation Time: %s\n", time.Duration(elapsedRotation.Nanoseconds()/int64(loop*len(params.GaloisElementsForRowInnerSum()))))
+	// //single operation, independent of households' size
+	// fmt.Printf("*****Amortized Encrypt Time: %s\n", time.Duration(elapsedEncryptParty.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Decrypt Time: %s\n", time.Duration(elapsedDecParty.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Ciphertext Addition Time: %s\n", time.Duration(elapsedAddition.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Ciphertext Multiplication Time: %s\n", time.Duration(elapsedMultiplication.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Ciphertext Rotation Time: %s\n", time.Duration(elapsedRotation.Nanoseconds()/int64(loop*len(params.GaloisElementsForRowInnerSum()))))
 
-	fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystSummation.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystVariance.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystSummation.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystVariance.Nanoseconds()/int64(loop)))
 
 	PrintMemUsage()
 }
@@ -413,8 +413,10 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			}
 
 			if j == len(encInputsSummation[i])-1 {
-				elapsedRotation += runTimedParty(func() {
-					evaluator.InnerSum(tmpCiphertext, 1, params.Slots(), tmpCiphertext)
+				elapsedSummation += runTimedParty(func() {
+					elapsedRotation += runTimedParty(func() {
+						evaluator.InnerSum(tmpCiphertext, 1, params.Slots(), tmpCiphertext)
+					}, len(P))
 				}, len(P))
 				encSummationOuts[i] = tmpCiphertext
 			}
@@ -432,7 +434,7 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 				avergeCiphertext = encSummationOuts[i].CopyNew()
 				avergeCiphertext.Scale = avergeCiphertext.Mul(rlwe.NewScale(globalPartyRows))
 			}
-			elapsedDeviation += runTimed(func() {
+			elapsedDeviation += runTimedParty(func() {
 				elapsedAddition += runTimedParty(func() {
 					evaluator.Add(encInputsNegative[i][j], avergeCiphertext, encInputsNegative[i][j])
 				}, len(P))
@@ -444,11 +446,9 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 				if j == 0 {
 					tmpCiphertext = encInputsNegative[i][j]
 				} else {
-					elapsedSummation += runTimed(func() {
-						elapsedRotation += runTimedParty(func() {
-							evaluator.Add(tmpCiphertext, encInputsNegative[i][j], tmpCiphertext)
-						}, len(P))
-					})
+					elapsedRotation += runTimedParty(func() {
+						evaluator.Add(tmpCiphertext, encInputsNegative[i][j], tmpCiphertext)
+					}, len(P))
 				}
 
 				if j == len(encInputsNegative[i])-1 {
@@ -458,7 +458,7 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 					tmpCiphertext.Scale = tmpCiphertext.Mul(rlwe.NewScale(globalPartyRows))
 					encDeviationOuts[i] = tmpCiphertext
 				}
-			})
+			}, len(P))
 		} //j
 	} //i
 	elapsedAnalystVariance += time.Since(anaTime2)
