@@ -269,8 +269,9 @@ func filterParties(P []*party, arr []float64) (resultParties []*party) {
 			for k := 0; k < len(arr); k++ {
 				if po.plainInput[i+k] != arr[k] {
 					break
+				} else if k == len(arr) {
+					matched = true
 				}
-				matched = true
 			}
 			if matched {
 				break
