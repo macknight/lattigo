@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -67,10 +68,10 @@ type task struct {
 	elapsedtask time.Duration
 }
 
-//mac/Linux
-// var pathFormat = "examples/datasets/%s/households_%d"
+// mac/Linux
+// var pathFormat = "../../datasets/%s/households_%d"
 
-//windows
+// windows
 const pathFormat = "examples\\datasets\\%s\\households_%d"
 
 const MAX_PARTY_ROWS = 20480 //241920
@@ -83,8 +84,8 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
-var attackLoop = 1
-var maxHouseholdsNumber = 2
+var attackLoop = 100
+var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
@@ -141,7 +142,7 @@ func main() {
 	fmt.Printf("Main() Done in %s \n", time.Since(start))
 }
 
-//main start
+// main start
 func process(fileList []string, params ckks.Parameters) {
 	P := genparties(params, fileList)
 	_, _, _, _, _, entropySum, transitionSum := genInputs(P)
@@ -151,6 +152,7 @@ func process(fileList []string, params ckks.Parameters) {
 	// var plainSum []float64
 	var entropyReduction float64
 	var transitionReduction int
+
 	for en := 0; en < encryptedSectionNum; en++ {
 		fmt.Printf("------------------------------------------encryptedSectionNum = %d\n", en)
 
@@ -168,6 +170,7 @@ func process(fileList []string, params ckks.Parameters) {
 
 		memberIdentificationAttack(P) //under current partial encryption
 	}
+
 }
 
 func memberIdentificationAttack(P []*party) {
@@ -187,57 +190,73 @@ func attackParties(P []*party) (attackSuccessNum int) {
 
 	var leftArr []float64
 	var rightArr []float64
-	for k := 1; k < sectionSize-1; k++ {
-		leftArr = make([]float64, 0)
-		rightArr = make([]float64, 0)
-		// fmt.Printf("<<pos: %d; ", k)
-		var tmpParties []*party
-		//search with left part
-		for i := 0; i < k; i++ {
-			leftArr = append(leftArr, P[randomParty].rawInput[i+randomStart])
-		}
-		tmpParties = filterParties(P, leftArr)
-
-		if len(tmpParties) == 0 {
-			tmpParties = P
-		}
-
-		//search with right part
-		for j := k; j < sectionSize; j++ {
-			rightArr = append(rightArr, P[randomParty].rawInput[j+randomStart])
-		}
-		tmpParties = filterParties(tmpParties, rightArr)
-		if len(tmpParties) == 1 {
-			attackSuccessNum = 1
-			// fmt.Printf("!!!!!!!!Success with party file[%s]\n", filepath.Base(tmpParties[0].filename))
-			break
-		}
+	var k int = sectionSize - (randomStart % sectionSize)
+	// for k := 1; k < sectionSize-1; k++ {
+	leftArr = make([]float64, 0)
+	rightArr = make([]float64, 0)
+	// fmt.Printf("<<pos: %d; ", k)
+	var tmpParties []*party
+	//search with left part
+	for i := 0; i < k; i++ {
+		leftArr = append(leftArr, P[randomParty].rawInput[i+randomStart])
 	}
+	tmpParties = filterParties(P, leftArr)
+
+	if len(tmpParties) == 0 {
+		tmpParties = P
+	}
+
+	//search with right part
+	for j := k; j < sectionSize; j++ {
+		rightArr = append(rightArr, P[randomParty].rawInput[j+randomStart])
+	}
+	tmpParties = filterParties(tmpParties, rightArr)
+	if len(tmpParties) == 1 {
+		attackSuccessNum = 1
+		// fmt.Printf("!!!!!!!!Success with party file[%s]\n", filepath.Base(tmpParties[0].filename))
+		// break
+	}
+	// }
 	// fmt.Println("ending attack#############")
 	return
 }
 
 func filterParties(P []*party, arr []float64) (resultParties []*party) {
 	resultParties = make([]*party, 0)
+	var length = len(arr)
 
 	for _, po := range P {
-		matched := false
-		for i := 0; i < len(po.plainInput)-len(arr); i++ {
-			for k := 0; k < len(arr); k++ {
-				if po.plainInput[i+k] != arr[k] {
-					break
-				} else if k == len(arr) {
-					matched = true
-				}
-			}
-			if matched {
+		var household_data = po.plainInput
+		for i := 0; i < len(household_data)-length+1; i++ {
+			var target = household_data[i : i+length]
+			if reflect.DeepEqual(target, arr) {
+				resultParties = append(resultParties, po)
 				break
 			}
 		}
-		if matched {
-			resultParties = append(resultParties, po)
-		}
-	} // each party
+	}
+	return
+
+	// resultParties = make([]*party, 0)
+
+	// for _, po := range P {
+	// 	matched := false
+	// 	for i := 0; i < len(po.plainInput)-len(arr); i++ {
+	// 		for k := 0; k < len(arr); k++ {
+	// 			if po.plainInput[i+k] != arr[k] {
+	// 				break
+	// 			} else if k == len(arr) {
+	// 				matched = true
+	// 			}
+	// 		}
+	// 		if matched {
+	// 			break
+	// 		}
+	// 	}
+	// 	if matched {
+	// 		resultParties = append(resultParties, po)
+	// 	}
+	// } // each party
 	return
 }
 
@@ -389,7 +408,7 @@ func genparties(params ckks.Parameters, fileList []string) []*party {
 	return P
 }
 
-//file reading
+// file reading
 func ReadCSV(path string) []string {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -399,7 +418,7 @@ func ReadCSV(path string) []string {
 	return dArray[:len(dArray)-1]
 }
 
-//trim csv
+// trim csv
 func resizeCSV(filename string) []float64 {
 	csv := ReadCSV(filename)
 
@@ -422,7 +441,7 @@ func getRandom(numberRange int) (randNumber int) {
 	return
 }
 
-//generate inputs of parties
+// generate inputs of parties
 func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, minEntropy, maxEntropy, entropySum float64, transitionSum int) {
 
 	sectionNum = 0

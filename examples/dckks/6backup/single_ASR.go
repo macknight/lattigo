@@ -111,6 +111,9 @@ func main() {
 		fmt.Println("Error getting current working directory:", err)
 		return
 	}
+	if wd != "c:\\Users\\23304161\\source\\repos\\lattigo\\" {
+		wd = "c:\\Users\\23304161\\source\\repos\\lattigo\\"
+	}
 
 	var path string
 	if currentDataset == DATASET_WATER {
@@ -187,7 +190,7 @@ func attackParties(P []*party) (attackSuccessNum int) {
 
 	var leftArr []float64
 	var rightArr []float64
-	for k := 1; k < sectionSize-1; k++ {
+	for k := 0; k < sectionSize-1; k++ {
 		leftArr = make([]float64, 0)
 		rightArr = make([]float64, 0)
 		// fmt.Printf("<<pos: %d; ", k)
@@ -219,6 +222,9 @@ func attackParties(P []*party) (attackSuccessNum int) {
 
 func filterParties(P []*party, arr []float64) (resultParties []*party) {
 	resultParties = make([]*party, 0)
+	if len(arr) == 0 {
+		return
+	}
 
 	for _, po := range P {
 		matched := false
