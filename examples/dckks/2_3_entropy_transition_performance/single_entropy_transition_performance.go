@@ -103,7 +103,7 @@ const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var attackLoop = 1
-var maxHouseholdsNumber = 80
+var maxHouseholdsNumber = 2
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
@@ -172,7 +172,7 @@ func process(fileList []string, params ckks.Parameters) {
 
 	//getInputs read the data file
 	// Inputs & expected result, cleartext result
-	expSummation, expAverage, expDeviation, minEntropy, maxEntropy, entropySum, transitionSum := genInputs(P)
+	_, _, _, minEntropy, maxEntropy, entropySum, transitionSum := genInputs(P)
 	histogram := genHistogram(P, minEntropy, maxEntropy)
 	fmt.Printf(">>>>>>>Entropy Histograme:\n")
 	for i := 0; i < len(histogram); i++ {
@@ -183,18 +183,18 @@ func process(fileList []string, params ckks.Parameters) {
 	fmt.Printf("threshold = %.1f, entropy,transition remain = %.3f,%d\n", 0.0, entropySum, transitionSum)
 
 	encryptedSectionNum = sectionNum
-	var plainSum []float64
+	// var plainSum []float64
 	var entropyReduction float64
 	var transitionReduction int
 	for en := 0; en < encryptedSectionNum; en++ {
 		fmt.Printf("------------------------------------------encryptedSectionNum = %d\n", en)
 
 		if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
-			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByGlobalEntropyHightoLow(en, P, entropySum, transitionSum)
+			_, entropyReduction, transitionReduction = markEncryptedSectionsByGlobalEntropyHightoLow(en, P, entropySum, transitionSum)
 		} else if currentStrategy == STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW {
-			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByHouseholdEntropyHightoLow(en, P, entropySum, transitionSum)
+			_, entropyReduction, transitionReduction = markEncryptedSectionsByHouseholdEntropyHightoLow(en, P, entropySum, transitionSum)
 		} else { //STRATEGY_RANDOM
-			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByRandom(en, P, entropySum, transitionSum)
+			_, entropyReduction, transitionReduction = markEncryptedSectionsByRandom(en, P, entropySum, transitionSum)
 		}
 		entropySum -= entropyReduction
 		transitionSum -= transitionReduction
@@ -203,13 +203,13 @@ func process(fileList []string, params ckks.Parameters) {
 
 		memberIdentificationAttack(P) //under current partial encryption
 
-		//HE performance by loops
-		for performanceLoop := 0; performanceLoop < performanceLoops; performanceLoop++ {
-			fmt.Printf("<<<performanceLoop = [%d], encryptedSectionNum = [%d]\n", performanceLoop, en)
-			doHomomorphicOperations(params, P, expSummation, expAverage, expDeviation, plainSum)
-		}
-		//performance prints
-		showHomomorphicMeasure(performanceLoops, params)
+		// //HE performance by loops
+		// for performanceLoop := 0; performanceLoop < performanceLoops; performanceLoop++ {
+		// 	fmt.Printf("<<<performanceLoop = [%d], encryptedSectionNum = [%d]\n", performanceLoop, en)
+		// 	doHomomorphicOperations(params, P, expSummation, expAverage, expDeviation, plainSum)
+		// }
+		// //performance prints
+		// showHomomorphicMeasure(performanceLoops, params)
 	}
 }
 
