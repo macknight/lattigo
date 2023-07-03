@@ -69,10 +69,10 @@ type task struct {
 }
 
 // mac/Linux
-// var pathFormat = "../../datasets/%s/households_%d"
+var pathFormat = "../../datasets/%s/households_%d"
 
 // windows
-const pathFormat = "examples\\datasets\\%s\\households_%d"
+// const pathFormat = "examples\\datasets\\%s\\households_%d"
 
 const MAX_PARTY_ROWS = 20480 //241920
 const sectionSize = 2048     // element number within a section
@@ -94,6 +94,7 @@ var currentDataset = 1  //water(1),electricity(2)
 var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
 var transitionEqualityThreshold int
 var sectionNum int
+var usedRandomStartPartyPairs = map[int][]int{}
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
@@ -176,6 +177,9 @@ func process(fileList []string, params ckks.Parameters) {
 func memberIdentificationAttack(P []*party) {
 	var attackSuccessNum int
 	for a := 0; a < attackLoop; a++ {
+		// if a%10 == 0 {
+		// 	fmt.Println("loop: ", a)
+		// }
 		attackSuccessNum += attackParties(P)
 	}
 	fmt.Printf("<<<<<<<<<<<EncryptedSectionNum = %v, ASR = %.3f\n", encryptedSectionNum, float64(attackSuccessNum)/float64(attackLoop))
@@ -185,12 +189,14 @@ func attackParties(P []*party) (attackSuccessNum int) {
 	// fmt.Println("starting attack>>>>>>>>>>>>>")
 	attackSuccessNum = 0
 	randomParty := getRandom(maxHouseholdsNumber)
-	randomStart := getRandom(MAX_PARTY_ROWS - sectionSize)
-	// fmt.Printf("attackering at Party[%d], position[%d]\n", randomParty, randomStart)
+	randomStart := getRandomStart(randomParty)
+	// randomStart := getRandom(MAX_PARTY_ROWS - sectionSize)
+	// fmt.Printf("attacking at Party[%d], position[%d]\n", randomParty, randomStart)
 
 	var leftArr []float64
 	var rightArr []float64
 	var k int = sectionSize - (randomStart % sectionSize)
+	// fmt.Printf(">>pos: %d; ", k)
 	// for k := 1; k < sectionSize-1; k++ {
 	leftArr = make([]float64, 0)
 	rightArr = make([]float64, 0)
@@ -210,15 +216,49 @@ func attackParties(P []*party) (attackSuccessNum int) {
 	for j := k; j < sectionSize; j++ {
 		rightArr = append(rightArr, P[randomParty].rawInput[j+randomStart])
 	}
+
 	tmpParties = filterParties(tmpParties, rightArr)
+
 	if len(tmpParties) == 1 {
 		attackSuccessNum = 1
 		// fmt.Printf("!!!!!!!!Success with party file[%s]\n", filepath.Base(tmpParties[0].filename))
 		// break
 	}
+
 	// }
 	// fmt.Println("ending attack#############")
 	return
+}
+
+func getRandomStart(party int) int {
+	var valid bool = false
+
+	var randomStart int
+
+	for !valid {
+		randomStart = getRandom(MAX_PARTY_ROWS - sectionSize)
+		if !contains(party, randomStart) {
+			usedRandomStartPartyPairs[party] = append(usedRandomStartPartyPairs[party], randomStart)
+			valid = true
+		}
+	}
+	return randomStart
+}
+
+func contains(party int, randomStart int) bool {
+	var contains bool = false
+
+	val, exists := usedRandomStartPartyPairs[party]
+
+	if exists {
+		for _, v := range val {
+			if v == randomStart {
+				contains = true
+			}
+		}
+	}
+
+	return contains
 }
 
 func filterParties(P []*party, arr []float64) (resultParties []*party) {
@@ -235,28 +275,6 @@ func filterParties(P []*party, arr []float64) (resultParties []*party) {
 			}
 		}
 	}
-	return
-
-	// resultParties = make([]*party, 0)
-
-	// for _, po := range P {
-	// 	matched := false
-	// 	for i := 0; i < len(po.plainInput)-len(arr); i++ {
-	// 		for k := 0; k < len(arr); k++ {
-	// 			if po.plainInput[i+k] != arr[k] {
-	// 				break
-	// 			} else if k == len(arr) {
-	// 				matched = true
-	// 			}
-	// 		}
-	// 		if matched {
-	// 			break
-	// 		}
-	// 	}
-	// 	if matched {
-	// 		resultParties = append(resultParties, po)
-	// 	}
-	// } // each party
 	return
 }
 
