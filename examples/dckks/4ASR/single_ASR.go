@@ -51,13 +51,14 @@ type party struct {
 	rtgShare    *drlwe.RTGShare
 	pcksShare   *drlwe.PCKSShare
 
-	rawInput   []float64   //all data
-	input      [][]float64 //data of encryption
-	plainInput []float64   //data of plain
-	flag       []int
-	group      []int
-	entropy    []float64
-	transition []int
+	rawInput       []float64   //all data
+	input          [][]float64 //data of encryption
+	plainInput     []float64   //data of plain
+	encryptedInput []float64   //encrypted data of raw (encrypted value are -0.1)
+	flag           []int
+	group          []int
+	entropy        []float64
+	transition     []int
 }
 
 type task struct {
@@ -84,8 +85,9 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
-var attackLoop = 100
-var maxHouseholdsNumber = 80
+var confidence_level float64 = 1.0
+var attackLoop = 10
+var maxHouseholdsNumber = 2
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
@@ -189,7 +191,17 @@ func attackParties(P []*party) (attackSuccessNum int) {
 	// fmt.Println("starting attack>>>>>>>>>>>>>")
 	attackSuccessNum = 0
 	randomParty := getRandom(maxHouseholdsNumber)
-	randomStart := getRandomStart(randomParty)
+
+	var valid = false
+	var randomStart int
+
+	for !valid {
+		randomStart := getRandomStart(randomParty)
+		if uniqueRandomStartPartyPair(P, randomParty, randomStart) {
+			valid = true
+		}
+	}
+
 	// randomStart := getRandom(MAX_PARTY_ROWS - sectionSize)
 	// fmt.Printf("attacking at Party[%d], position[%d]\n", randomParty, randomStart)
 
@@ -261,12 +273,48 @@ func contains(party int, randomStart int) bool {
 	return contains
 }
 
-func filterParties(P []*party, arr []float64) (resultParties []*party) {
-	resultParties = make([]*party, 0)
-	var length = len(arr)
+func uniqueRandomStartPartyPair(P []*party, randomParty int, randomStart int) bool {
+	var unique bool = true
+	var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+sectionSize]
 
 	for _, po := range P {
-		var household_data = po.plainInput
+		var household_data = po.rawInput
+		for i := 0; i < len(household_data)-sectionSize+1; i++ {
+			if i == randomStart {
+				continue
+			}
+			var target = household_data[i : i+sectionSize]
+			if reflect.DeepEqual(target, attacker_data_block) {
+				unique = false
+				break
+			}
+		}
+	}
+	return unique
+}
+
+func filterParties(P []*party, arr []float64) (resultParties []*party) {
+	resultParties = make([]*party, 0)
+	var length int = len(arr)
+
+	// var min_length int = int(math.Ceil(float64(length) * confidence_level))
+	// var count int = 0
+
+	// for _, po := range P {
+	// 	var household_data = po.encryptedInput
+	// 	for i := 0; i < len(household_data)-length+1; i++ {
+	// 		for j
+	// 			var target = household_data[i : i+length]
+	// 			if reflect.DeepEqual(target, arr) {
+	// 				resultParties = append(resultParties, po)
+	// 				break
+	// 			}
+	// 	}
+	// }
+	// return
+
+	for _, po := range P {
+		var household_data = po.encryptedInput
 		for i := 0; i < len(household_data)-length+1; i++ {
 			var target = household_data[i : i+length]
 			if reflect.DeepEqual(target, arr) {
@@ -304,6 +352,8 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 	for pi, po := range P {
 		po.input = make([][]float64, 0)
 		po.plainInput = make([]float64, 0)
+		po.encryptedInput = make([]float64, 0)
+
 		k := 0
 		for j := 0; j < globalPartyRows; j++ {
 			if j%sectionSize == 0 && j/sectionSize > len(po.flag)-(en+1)-1 {
@@ -313,9 +363,12 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 
 			if j/sectionSize > len(po.flag)-(en+1)-1 {
 				po.input[k-1][j%sectionSize] = po.rawInput[j]
+				po.encryptedInput = append(po.encryptedInput, -0.1)
+
 			} else {
 				plainSum[pi] += po.rawInput[j]
 				po.plainInput = append(po.plainInput, po.rawInput[j])
+				po.encryptedInput = append(po.encryptedInput, po.rawInput[j])
 			}
 		}
 	}
@@ -352,6 +405,7 @@ func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySu
 	for pi, po := range P {
 		po.input = make([][]float64, 0)
 		po.plainInput = make([]float64, 0)
+		po.encryptedInput = make([]float64, 0)
 		k := 0
 		for j := 0; j < globalPartyRows; j++ {
 			if j%sectionSize == 0 && po.flag[j/sectionSize] == 1 {
@@ -361,9 +415,11 @@ func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySu
 
 			if po.flag[j/sectionSize] == 1 {
 				po.input[k-1][j%sectionSize] = po.rawInput[j]
+				po.encryptedInput = append(po.encryptedInput, -0.1)
 			} else {
 				plainSum[pi] += po.rawInput[j]
 				po.plainInput = append(po.plainInput, po.rawInput[j])
+				po.encryptedInput = append(po.encryptedInput, po.rawInput[j])
 			}
 		}
 	}
@@ -395,6 +451,8 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 	for pi, po := range P {
 		po.input = make([][]float64, 0)
 		po.plainInput = make([]float64, 0)
+		po.encryptedInput = make([]float64, 0)
+
 		k := 0
 		for j := 0; j < globalPartyRows; j++ {
 			if j%sectionSize == 0 && po.flag[j/sectionSize] == 1 {
@@ -404,14 +462,27 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 
 			if po.flag[j/sectionSize] == 1 {
 				po.input[k-1][j%sectionSize] = po.rawInput[j]
+				po.encryptedInput = append(po.encryptedInput, -0.1)
 			} else {
 				plainSum[pi] += po.rawInput[j]
 				po.plainInput = append(po.plainInput, po.rawInput[j])
+				po.encryptedInput = append(po.encryptedInput, po.rawInput[j])
 			}
 		}
 	}
 	return
 }
+
+// func encryptedSection() [sectionSize]float64 {
+// 	arr := [sectionSize]float64{}
+
+// 	// Initialize each element with the same value
+// 	for i := 0; i < sectionSize; i++ {
+// 		arr[i] = -0.1
+// 	}
+
+// 	return arr
+// }
 
 func genparties(params ckks.Parameters, fileList []string) []*party {
 	P := make([]*party, len(fileList))
