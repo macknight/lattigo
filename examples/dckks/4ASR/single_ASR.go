@@ -85,9 +85,9 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
-var confidence_level float64 = 1.0
-var attackLoop = 10
-var maxHouseholdsNumber = 2
+// var confidence_level float64 = 1
+var attackLoop = 1000
+var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
@@ -149,7 +149,7 @@ func main() {
 func process(fileList []string, params ckks.Parameters) {
 	P := genparties(params, fileList)
 	_, _, _, _, _, entropySum, transitionSum := genInputs(P)
-	fmt.Printf("threshold = %.1f, entropy,transition remain = %.3f,%d\n", 0.0, entropySum, transitionSum)
+	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", 0.0, entropySum, transitionSum)
 
 	encryptedSectionNum = sectionNum
 	// var plainSum []float64
@@ -169,9 +169,10 @@ func process(fileList []string, params ckks.Parameters) {
 		entropySum -= entropyReduction
 		transitionSum -= transitionReduction
 
-		fmt.Printf("<<<beging---encryptedSectionNum = [%d]\n", en)
+		fmt.Printf("<<<beginning---encryptedSectionNum = [%d]\n", en)
 
-		memberIdentificationAttack(P) //under current partial encryption
+		memberIdentificationAttack(P)               //under current partial encryption
+		usedRandomStartPartyPairs = map[int][]int{} //clear map for the next loop
 	}
 
 }
@@ -191,53 +192,26 @@ func attackParties(P []*party) (attackSuccessNum int) {
 	// fmt.Println("starting attack>>>>>>>>>>>>>")
 	attackSuccessNum = 0
 	randomParty := getRandom(maxHouseholdsNumber)
+	// fmt.Println("randomParty: ", randomParty)
 
 	var valid = false
 	var randomStart int
+	// fmt.Printf("attacking at Party[%d], position[%d]\n", randomParty, randomStart)
 
 	for !valid {
-		randomStart := getRandomStart(randomParty)
+		randomStart = getRandomStart(randomParty)
 		if uniqueRandomStartPartyPair(P, randomParty, randomStart) {
 			valid = true
 		}
 	}
 
-	// randomStart := getRandom(MAX_PARTY_ROWS - sectionSize)
-	// fmt.Printf("attacking at Party[%d], position[%d]\n", randomParty, randomStart)
+	var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+sectionSize]
 
-	var leftArr []float64
-	var rightArr []float64
-	var k int = sectionSize - (randomStart % sectionSize)
-	// fmt.Printf(">>pos: %d; ", k)
-	// for k := 1; k < sectionSize-1; k++ {
-	leftArr = make([]float64, 0)
-	rightArr = make([]float64, 0)
-	// fmt.Printf("<<pos: %d; ", k)
-	var tmpParties []*party
-	//search with left part
-	for i := 0; i < k; i++ {
-		leftArr = append(leftArr, P[randomParty].rawInput[i+randomStart])
-	}
-	tmpParties = filterParties(P, leftArr)
-
-	if len(tmpParties) == 0 {
-		tmpParties = P
+	var matched_households = identifyParty(P, attacker_data_block, randomParty, randomStart)
+	if len(matched_households) == 1 && matched_households[0] == randomParty {
+		attackSuccessNum++
 	}
 
-	//search with right part
-	for j := k; j < sectionSize; j++ {
-		rightArr = append(rightArr, P[randomParty].rawInput[j+randomStart])
-	}
-
-	tmpParties = filterParties(tmpParties, rightArr)
-
-	if len(tmpParties) == 1 {
-		attackSuccessNum = 1
-		// fmt.Printf("!!!!!!!!Success with party file[%s]\n", filepath.Base(tmpParties[0].filename))
-		// break
-	}
-
-	// }
 	// fmt.Println("ending attack#############")
 	return
 }
@@ -289,41 +263,34 @@ func uniqueRandomStartPartyPair(P []*party, randomParty int, randomStart int) bo
 				break
 			}
 		}
+		if !unique {
+			break
+		}
 	}
 	return unique
 }
 
-func filterParties(P []*party, arr []float64) (resultParties []*party) {
-	resultParties = make([]*party, 0)
-	var length int = len(arr)
+func identifyParty(P []*party, arr []float64, party int, index int) []int {
+	var matched_households []int
 
-	// var min_length int = int(math.Ceil(float64(length) * confidence_level))
-	// var count int = 0
+	var target = P[party].encryptedInput[index : index+sectionSize]
+	if reflect.DeepEqual(target, arr) {
+		matched_households = append(matched_households, party)
+	}
+	// var length int = len(arr)
+	// var min_length int = int(math.Ceil(float64(len(arr)) * confidence_level))
 
-	// for _, po := range P {
+	// for pn, po := range P {
 	// 	var household_data = po.encryptedInput
 	// 	for i := 0; i < len(household_data)-length+1; i++ {
-	// 		for j
-	// 			var target = household_data[i : i+length]
-	// 			if reflect.DeepEqual(target, arr) {
-	// 				resultParties = append(resultParties, po)
-	// 				break
-	// 			}
+	// 		var target = household_data[i : i+length]
+	// 		if reflect.DeepEqual(target, arr) {
+	// 			matched_households = append(matched_households, pn)
+	// 		}
 	// 	}
 	// }
-	// return
 
-	for _, po := range P {
-		var household_data = po.encryptedInput
-		for i := 0; i < len(household_data)-length+1; i++ {
-			var target = household_data[i : i+length]
-			if reflect.DeepEqual(target, arr) {
-				resultParties = append(resultParties, po)
-				break
-			}
-		}
-	}
-	return
+	return matched_households
 }
 
 func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
@@ -348,7 +315,7 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
-	//for each threshold, prepare plainInput&input
+	//for each threshold, prepare plainInput&input, and encryptedInput
 	for pi, po := range P {
 		po.input = make([][]float64, 0)
 		po.plainInput = make([]float64, 0)
@@ -401,7 +368,7 @@ func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySu
 
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
-	//for each threshold, prepare plainInput&input
+	//for each threshold, prepare plainInput&input, and encryptedInput
 	for pi, po := range P {
 		po.input = make([][]float64, 0)
 		po.plainInput = make([]float64, 0)
@@ -447,7 +414,7 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
-	//for each threshold, prepare plainInput&input
+	//for each threshold, prepare plainInput&input, and encryptedInput
 	for pi, po := range P {
 		po.input = make([][]float64, 0)
 		po.plainInput = make([]float64, 0)
@@ -472,17 +439,6 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 	}
 	return
 }
-
-// func encryptedSection() [sectionSize]float64 {
-// 	arr := [sectionSize]float64{}
-
-// 	// Initialize each element with the same value
-// 	for i := 0; i < sectionSize; i++ {
-// 		arr[i] = -0.1
-// 	}
-
-// 	return arr
-// }
 
 func genparties(params ckks.Parameters, fileList []string) []*party {
 	P := make([]*party, len(fileList))
