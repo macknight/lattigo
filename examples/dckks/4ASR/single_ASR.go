@@ -70,10 +70,10 @@ type task struct {
 }
 
 // mac/Linux
-var pathFormat = "../../datasets/%s/households_%d"
+// var pathFormat = "../../datasets/%s/households_%d"
 
 // windows
-// const pathFormat = "examples\\datasets\\%s\\households_%d"
+const pathFormat = "examples\\datasets\\%s\\households_%d"
 
 const MAX_PARTY_ROWS = 20480 //241920
 const sectionSize = 2048     // element number within a section
@@ -97,6 +97,7 @@ var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2
 var transitionEqualityThreshold int
 var sectionNum int
 var usedRandomStartPartyPairs = map[int][]int{}
+var blocks []string
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
@@ -155,6 +156,14 @@ func process(fileList []string, params ckks.Parameters) {
 	// var plainSum []float64
 	var entropyReduction float64
 	var transitionReduction int
+	if currentStrategy == 3 {
+		blocks = make([]string, len(P)*encryptedSectionNum)
+		for pi, _ := range P {
+			for i := 0; i < encryptedSectionNum; i++ {
+				blocks[pi*encryptedSectionNum+i] = fmt.Sprintf("%d,%d", pi, i)
+			}
+		}
+	}
 
 	for en := 0; en < encryptedSectionNum; en++ {
 		fmt.Printf("------------------------------------------encryptedSectionNum = %d\n", en)
@@ -321,25 +330,34 @@ func identifyParty(P []*party, arr []float64, party int, index int) []int {
 	return matched_households
 }
 
+func convertStrToInt(str string) (num int) {
+	num, err := strconv.Atoi(str)
+	if err != nil {
+		fmt.Println("Conversion error:", err)
+		return
+	}
+	return
+}
+
 func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
 
 	entropyReduction = 0.0
 	transitionReduction = 0
 	plainSum = make([]float64, len(P))
 
-	for _, po := range P {
-		if en == 0 {
-			for i := 0; i < len(po.flag); i++ {
-				po.flag[i] = i
-			}
-		}
-		r := getRandom(encryptedSectionNum - en)
-		index := po.flag[r]
-		entropyReduction += po.entropy[index]
-		transitionReduction += po.transition[index]
-		po.flag[r] = po.flag[encryptedSectionNum-1-en]
-		po.flag[encryptedSectionNum-1-en] = index
-	} // mark randomly
+	for i := 0; i < len(P); i++ {
+		r := getRandom(len(blocks) - en*(len(P)) - i)
+		rStr := strings.Split(blocks[r], ",")
+		rParty := convertStrToInt(rStr[0])
+		rPos := convertStrToInt(rStr[1])
+		//record reductions
+		entropyReduction += P[rParty].entropy[rPos]
+		transitionReduction += P[rParty].transition[rPos]
+		//label
+		P[rParty].flag[rPos] = 1
+		//exchange
+		blocks[r] = blocks[len(blocks)-1-en*(len(P))-i]
+	}
 
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
@@ -351,12 +369,12 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 
 		k := 0
 		for j := 0; j < globalPartyRows; j++ {
-			if j%sectionSize == 0 && j/sectionSize > len(po.flag)-(en+1)-1 {
+			if j%sectionSize == 0 && po.flag[j/sectionSize] == 1 {
 				po.input = append(po.input, make([]float64, sectionSize))
 				k++
 			}
 
-			if j/sectionSize > len(po.flag)-(en+1)-1 {
+			if po.flag[j/sectionSize] == 1 {
 				po.input[k-1][j%sectionSize] = po.rawInput[j]
 				po.encryptedInput = append(po.encryptedInput, -0.1)
 
