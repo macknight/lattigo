@@ -70,10 +70,10 @@ type task struct {
 }
 
 // mac/Linux
-// var pathFormat = "../../datasets/%s/households_%d"
+var pathFormat = "../../datasets/%s/households_%d"
 
 // windows
-const pathFormat = "examples\\datasets\\%s\\households_%d"
+// const pathFormat = "examples\\datasets\\%s\\households_%d"
 
 const MAX_PARTY_ROWS = 20480 //241920
 const sectionSize = 2048     // element number within a section
@@ -85,21 +85,57 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
-var confidence_level float64 = 0.9
-var attackLoop = 100
+var confidence_level float64 = 0.5
+var uniqueATD int
+var attackLoop = 1000
 var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
 var performanceLoops = 1
-var currentDataset = 1  //water(1),electricity(2)
-var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
+var currentDataset int  //water(1),electricity(2)
+var currentStrategy int //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
 var transitionEqualityThreshold int
 var sectionNum int
 var usedRandomStartPartyPairs = map[int][]int{}
-var blocks []string
 
 func main() {
+	var args []int
+
+	for _, arg := range os.Args[1:] {
+		num, err := strconv.Atoi(arg)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+		args = append(args, num)
+	}
+
+	currentStrategy = args[0]
+	currentDataset = args[1]
+	uniqueATD = args[2]
+
+	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
+		fmt.Println("Strategy: Global Entropy High To Low")
+	} else if currentStrategy == STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW {
+		fmt.Println("Strategy: Household Entropy High To Low")
+	} else {
+		fmt.Println("Strategy: Random")
+	}
+	if currentDataset == DATASET_WATER {
+		fmt.Println("Dataset: Water")
+	} else {
+		fmt.Println("Dataset: Electricity")
+	}
+	if uniqueATD == 0 {
+		fmt.Println("Unique Attacker Block: False")
+	} else {
+		fmt.Println("Unique Attacker Block: True")
+	}
+
+	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+
 	rand.Seed(time.Now().UnixNano())
 	start := time.Now()
 	fileList := []string{}
@@ -142,7 +178,13 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	process(fileList[:maxHouseholdsNumber], params)
+	for confidence := 1.0; confidence >= confidence_level; confidence -= 0.05 {
+		fmt.Println("")
+		fmt.Printf("Confidence Level = %.2f\n", confidence)
+		fmt.Println("====================================================================")
+		fmt.Println("")
+		process(fileList[:maxHouseholdsNumber], params)
+	}
 	fmt.Printf("Main() Done in %s \n", time.Since(start))
 }
 
@@ -151,19 +193,10 @@ func process(fileList []string, params ckks.Parameters) {
 	P := genparties(params, fileList)
 	_, _, _, _, _, entropySum, transitionSum := genInputs(P)
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", 0.0, entropySum, transitionSum)
-
 	encryptedSectionNum = sectionNum
 	// var plainSum []float64
 	var entropyReduction float64
 	var transitionReduction int
-	if currentStrategy == 3 {
-		blocks = make([]string, len(P)*encryptedSectionNum)
-		for pi, _ := range P {
-			for i := 0; i < encryptedSectionNum; i++ {
-				blocks[pi*encryptedSectionNum+i] = fmt.Sprintf("%d,%d", pi, i)
-			}
-		}
-	}
 
 	for en := 0; en < encryptedSectionNum; en++ {
 		fmt.Printf("------------------------------------------encryptedSectionNum = %d\n", en)
@@ -183,7 +216,6 @@ func process(fileList []string, params ckks.Parameters) {
 		memberIdentificationAttack(P)               //under current partial encryption
 		usedRandomStartPartyPairs = map[int][]int{} //clear map for the next loop
 	}
-
 }
 
 func memberIdentificationAttack(P []*party) {
@@ -207,11 +239,15 @@ func attackParties(P []*party) (attackSuccessNum int) {
 	var randomStart int
 	// fmt.Printf("attacking at Party[%d], position[%d]\n", randomParty, randomStart)
 
-	for !valid {
+	if uniqueATD == 0 {
 		randomStart = getRandomStart(randomParty)
-		var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+sectionSize]
-		if uniqueDataBlock(P, attacker_data_block, randomStart, "rawInput") {
-			valid = true
+	} else {
+		for !valid {
+			randomStart = getRandomStart(randomParty)
+			var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+sectionSize]
+			if uniqueDataBlock(P, attacker_data_block, randomStart, "rawInput") {
+				valid = true
+			}
 		}
 	}
 
@@ -227,6 +263,7 @@ func attackParties(P []*party) (attackSuccessNum int) {
 }
 
 func getRandomStart(party int) int {
+	// return an unused random start
 	var valid bool = false
 
 	var randomStart int
@@ -294,8 +331,15 @@ func identifyParty(P []*party, arr []float64, party int, index int) []int {
 
 	if min_length == len(arr) {
 		// When confidence is 100%, we can compare the arrays straight away.
-		if reflect.DeepEqual(dataset, arr) {
-			matched_households = append(matched_households, party)
+		if uniqueATD == 0 {
+			// If we are not using unique data blocks, need to check if it's an unique match
+			if reflect.DeepEqual(dataset, arr) && uniqueDataBlock(P, dataset, index, "encryptedInput") {
+				matched_households = append(matched_households, party)
+			}
+		} else {
+			if reflect.DeepEqual(dataset, arr) {
+				matched_households = append(matched_households, party)
+			}
 		}
 	} else {
 		// Otherwise, we need to compare each element of the arrays.
@@ -312,8 +356,8 @@ func identifyParty(P []*party, arr []float64, party int, index int) []int {
 					// Otherwise, we increment the mismatch counter.
 					mismatch += 1
 				}
-				// If the number of mismatches exceeds the minimum length, we can stop checking.
-				if mismatch > min_length {
+				// If the number of mismatches exceeds the allowable amount, we can stop checking.
+				if mismatch > (len(arr) - min_length) {
 					break
 				}
 			}
@@ -330,34 +374,25 @@ func identifyParty(P []*party, arr []float64, party int, index int) []int {
 	return matched_households
 }
 
-func convertStrToInt(str string) (num int) {
-	num, err := strconv.Atoi(str)
-	if err != nil {
-		fmt.Println("Conversion error:", err)
-		return
-	}
-	return
-}
-
 func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
 
 	entropyReduction = 0.0
 	transitionReduction = 0
 	plainSum = make([]float64, len(P))
 
-	for i := 0; i < len(P); i++ {
-		r := getRandom(len(blocks) - en*(len(P)) - i)
-		rStr := strings.Split(blocks[r], ",")
-		rParty := convertStrToInt(rStr[0])
-		rPos := convertStrToInt(rStr[1])
-		//record reductions
-		entropyReduction += P[rParty].entropy[rPos]
-		transitionReduction += P[rParty].transition[rPos]
-		//label
-		P[rParty].flag[rPos] = 1
-		//exchange
-		blocks[r] = blocks[len(blocks)-1-en*(len(P))-i]
-	}
+	for _, po := range P {
+		if en == 0 {
+			for i := 0; i < len(po.flag); i++ {
+				po.flag[i] = i
+			}
+		}
+		r := getRandom(encryptedSectionNum - en)
+		index := po.flag[r]
+		entropyReduction += po.entropy[index]
+		transitionReduction += po.transition[index]
+		po.flag[r] = po.flag[encryptedSectionNum-1-en]
+		po.flag[encryptedSectionNum-1-en] = index
+	} // mark randomly
 
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
@@ -369,12 +404,12 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 
 		k := 0
 		for j := 0; j < globalPartyRows; j++ {
-			if j%sectionSize == 0 && po.flag[j/sectionSize] == 1 {
+			if j%sectionSize == 0 && j/sectionSize > len(po.flag)-(en+1)-1 {
 				po.input = append(po.input, make([]float64, sectionSize))
 				k++
 			}
 
-			if po.flag[j/sectionSize] == 1 {
+			if j/sectionSize > len(po.flag)-(en+1)-1 {
 				po.input[k-1][j%sectionSize] = po.rawInput[j]
 				po.encryptedInput = append(po.encryptedInput, -0.1)
 
@@ -548,7 +583,7 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 			lenPartyRows = MAX_PARTY_ROWS
 		}
 
-		if globalPartyRows == -1 {
+		if pi == 0 {
 			sectionNum = lenPartyRows / sectionSize
 			if lenPartyRows%sectionSize != 0 {
 				sectionNum++
