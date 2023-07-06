@@ -85,8 +85,8 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
-// var confidence_level float64 = 1
-var attackLoop = 1000
+var confidence_level float64 = 0.9
+var attackLoop = 100
 var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
@@ -181,7 +181,7 @@ func memberIdentificationAttack(P []*party) {
 	var attackSuccessNum int
 	for a := 0; a < attackLoop; a++ {
 		// if a%10 == 0 {
-		// 	fmt.Println("loop: ", a)
+		// fmt.Println("loop: ", a)
 		// }
 		attackSuccessNum += attackParties(P)
 	}
@@ -200,7 +200,8 @@ func attackParties(P []*party) (attackSuccessNum int) {
 
 	for !valid {
 		randomStart = getRandomStart(randomParty)
-		if uniqueRandomStartPartyPair(P, randomParty, randomStart) {
+		var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+sectionSize]
+		if uniqueDataBlock(P, attacker_data_block, randomStart, "rawInput") {
 			valid = true
 		}
 	}
@@ -208,7 +209,7 @@ func attackParties(P []*party) (attackSuccessNum int) {
 	var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+sectionSize]
 
 	var matched_households = identifyParty(P, attacker_data_block, randomParty, randomStart)
-	if len(matched_households) == 1 && matched_households[0] == randomParty {
+	if len(matched_households) == 1 {
 		attackSuccessNum++
 	}
 
@@ -247,18 +248,22 @@ func contains(party int, randomStart int) bool {
 	return contains
 }
 
-func uniqueRandomStartPartyPair(P []*party, randomParty int, randomStart int) bool {
+func uniqueDataBlock(P []*party, arr []float64, start int, input_type string) bool {
 	var unique bool = true
-	var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+sectionSize]
 
 	for _, po := range P {
-		var household_data = po.rawInput
+		var household_data []float64
+		if input_type == "rawInput" {
+			household_data = po.rawInput
+		} else {
+			household_data = po.encryptedInput
+		}
 		for i := 0; i < len(household_data)-sectionSize+1; i++ {
-			if i == randomStart {
+			if i == start {
 				continue
 			}
 			var target = household_data[i : i+sectionSize]
-			if reflect.DeepEqual(target, attacker_data_block) {
+			if reflect.DeepEqual(target, arr) {
 				unique = false
 				break
 			}
@@ -271,24 +276,47 @@ func uniqueRandomStartPartyPair(P []*party, randomParty int, randomStart int) bo
 }
 
 func identifyParty(P []*party, arr []float64, party int, index int) []int {
-	var matched_households []int
+	var matched_households = []int{}
 
-	var target = P[party].encryptedInput[index : index+sectionSize]
-	if reflect.DeepEqual(target, arr) {
-		matched_households = append(matched_households, party)
+	var dataset = P[party].encryptedInput[index : index+sectionSize]
+
+	// Minimum length of the array to be considered a match.
+	var min_length int = int(math.Ceil(float64(len(arr)) * confidence_level))
+
+	if min_length == len(arr) {
+		// When confidence is 100%, we can compare the arrays straight away.
+		if reflect.DeepEqual(dataset, arr) {
+			matched_households = append(matched_households, party)
+		}
+	} else {
+		// Otherwise, we need to compare each element of the arrays.
+		for i := 0; i < len(dataset)-len(arr)+1; i++ {
+			var match = 0
+			var mismatch = 0
+			// For each element in the dataset, we compare it to the elements in the attack array.
+			for j := 0; j < len(arr); j++ {
+				// If the elements match, we increment the match counter.
+				if reflect.DeepEqual(arr[j], dataset[i+j]) {
+					match += 1
+
+				} else {
+					// Otherwise, we increment the mismatch counter.
+					mismatch += 1
+				}
+				// If the number of mismatches exceeds the minimum length, we can stop checking.
+				if mismatch > min_length {
+					break
+				}
+			}
+			if float64(match/len(arr)) >= confidence_level {
+				// If the matched portion meets the confidence level, we check if the data block is unique in the encrypted dataset.
+				if uniqueDataBlock(P, dataset, index, "encryptedInput") {
+					// If it is unique (only one match), we add the party to the list of matched households.
+					matched_households = append(matched_households, party)
+				}
+			}
+		}
 	}
-	// var length int = len(arr)
-	// var min_length int = int(math.Ceil(float64(len(arr)) * confidence_level))
-
-	// for pn, po := range P {
-	// 	var household_data = po.encryptedInput
-	// 	for i := 0; i < len(household_data)-length+1; i++ {
-	// 		var target = household_data[i : i+length]
-	// 		if reflect.DeepEqual(target, arr) {
-	// 			matched_households = append(matched_households, pn)
-	// 		}
-	// 	}
-	// }
 
 	return matched_households
 }
