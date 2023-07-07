@@ -86,15 +86,15 @@ const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var confidence_level float64
-var uniqueATD int = 1
-var attackLoop = 10
-var maxHouseholdsNumber = 2
+var attackLoop = 1000
+var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
 var performanceLoops = 1
-var currentDataset int = 1  //water(1),electricity(2)
-var currentStrategy int = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
+var uniqueATD int       // unique attacker data, 1 for true, 0 for false
+var currentDataset int  //water(1),electricity(2)
+var currentStrategy int //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
 var transitionEqualityThreshold int
 var sectionNum int
 var usedRandomStartPartyPairs = map[int][]int{}
@@ -112,9 +112,9 @@ func main() {
 		args = append(args, num)
 	}
 
-	// currentStrategy = args[0]
-	// currentDataset = args[1]
-	// uniqueATD = args[2]
+	currentStrategy = args[0]
+	currentDataset = args[1]
+	uniqueATD = args[2]
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
