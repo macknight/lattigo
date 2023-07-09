@@ -92,8 +92,8 @@ type task struct {
 //windows
 const pathFormat = "examples\\datasets\\%s\\households_%d"
 
-const MAX_PARTY_ROWS = 20480 //241920
-const sectionSize = 2048     // element number within a section
+const MAX_PARTY_ROWS = 409600 //241920
+const sectionSize = 16384     // element number within a section
 const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
 const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
 const STRATEGY_RANDOM = 3
@@ -120,7 +120,7 @@ func main() {
 
 	fileList := []string{}
 	var err error
-	paramsDef := ckks.PN11QP54CI // block size = 4096
+	paramsDef := ckks.PN14QP438CI // block size = 4096
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
 	if err != nil {
@@ -129,6 +129,7 @@ func main() {
 
 	// Get the current working directory
 	wd, err := os.Getwd()
+	wd = "c:\\Users\\23304161\\source\\repos\\lattigo"
 	if err != nil {
 		fmt.Println("Error getting current working directory:", err)
 		return
@@ -172,7 +173,7 @@ func process(fileList []string, params ckks.Parameters) {
 
 	//getInputs read the data file
 	// Inputs & expected result, cleartext result
-	_, _, _, minEntropy, maxEntropy, entropySum, transitionSum := genInputs(P)
+	expSummation, expAverage, expDeviation, minEntropy, maxEntropy, entropySum, transitionSum := genInputs(P)
 	histogram := genHistogram(P, minEntropy, maxEntropy)
 	fmt.Printf(">>>>>>>Entropy Histograme:\n")
 	for i := 0; i < len(histogram); i++ {
@@ -180,34 +181,34 @@ func process(fileList []string, params ckks.Parameters) {
 	}
 
 	//mark blocks needing to be encrypted
-	fmt.Printf("threshold = %.1f, entropy,transition remain = %.3f,%d\n", 0.0, entropySum, transitionSum)
+	// fmt.Printf("threshold = %.1f, entropy,transition remain = %.3f,%d\n", 0.0, entropySum, transitionSum)
 
 	encryptedSectionNum = sectionNum
-	// var plainSum []float64
+	var plainSum []float64
 	var entropyReduction float64
 	var transitionReduction int
 	for en := 0; en < encryptedSectionNum; en++ {
-		fmt.Printf("------------------------------------------encryptedSectionNum = %d\n", en)
+		// fmt.Printf("------------------------------------------encryptedSectionNum = %d\n", en)
 
 		if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
-			_, entropyReduction, transitionReduction = markEncryptedSectionsByGlobalEntropyHightoLow(en, P, entropySum, transitionSum)
+			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByGlobalEntropyHightoLow(en, P, entropySum, transitionSum)
 		} else if currentStrategy == STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW {
-			_, entropyReduction, transitionReduction = markEncryptedSectionsByHouseholdEntropyHightoLow(en, P, entropySum, transitionSum)
+			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByHouseholdEntropyHightoLow(en, P, entropySum, transitionSum)
 		} else { //STRATEGY_RANDOM
-			_, entropyReduction, transitionReduction = markEncryptedSectionsByRandom(en, P, entropySum, transitionSum)
+			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByRandom(en, P, entropySum, transitionSum)
 		}
 		entropySum -= entropyReduction
 		transitionSum -= transitionReduction
 
-		fmt.Printf("<<<beging---encryptedSectionNum = [%d]\n", en)
+		// fmt.Printf("<<<beging---encryptedSectionNum = [%d]\n", en)
 
 		memberIdentificationAttack(P) //under current partial encryption
 
-		// //HE performance by loops
-		// for performanceLoop := 0; performanceLoop < performanceLoops; performanceLoop++ {
-		// 	fmt.Printf("<<<performanceLoop = [%d], encryptedSectionNum = [%d]\n", performanceLoop, en)
-		// 	doHomomorphicOperations(params, P, expSummation, expAverage, expDeviation, plainSum)
-		// }
+		//HE performance by loops
+		for performanceLoop := 0; performanceLoop < performanceLoops; performanceLoop++ {
+			fmt.Printf("<<<performanceLoop = [%d], encryptedSectionNum = [%d]\n", performanceLoop, en)
+			doHomomorphicOperations(params, P, expSummation, expAverage, expDeviation, plainSum)
+		}
 		// //performance prints
 		// showHomomorphicMeasure(performanceLoops, params)
 	}
@@ -548,11 +549,11 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 	ptresSummation := ckks.NewPlaintext(params, params.MaxLevel())
 	for i, _ := range encSummationOuts {
 		if encSummationOuts[i] != nil {
-			decryptor.Decrypt(encSummationOuts[i], ptresSummation) //ciphertext->plaintext
-			encoder.Decode(ptresSummation, params.LogSlots())      //resSummation :=
-			// fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0])+plainSum[i])
-			// fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
-			// fmt.Println()
+			decryptor.Decrypt(encSummationOuts[i], ptresSummation)            //ciphertext->plaintext
+			resSummation := encoder.Decode(ptresSummation, params.LogSlots()) //resSummation :=
+			fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0])+plainSum[i])
+			fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
+			fmt.Println()
 		}
 	}
 
@@ -566,7 +567,7 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			}, len(P))
 
 			// res := encoder.Decode(ptres, params.LogSlots())
-			encoder.Decode(ptresDeviation, params.LogSlots()) //resDeviation :=
+			resDeviation := encoder.Decode(ptresDeviation, params.LogSlots()) //resDeviation :=
 
 			// calculatedAverage := real(res[0])
 			// calculatedAverage := expAverage[i]
@@ -578,9 +579,9 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			//extra value for deviation
 			// delta := calculatedAverage * calculatedAverage * float64(len(resDeviation)-globalPartyRows) / float64(globalPartyRows)
 
-			// fmt.Printf("CKKS Deviation of Party[%d]=%.6f\t", i, real(resDeviation[0])) //real(resDeviation[0])-delta
-			// fmt.Printf(" <===> Expected Deviation of Party[%d]=%.6f\t", i, expDeviation[i])
-			// fmt.Println()
+			fmt.Printf("CKKS Deviation of Party[%d]=%.6f\t", i, real(resDeviation[0])) //real(resDeviation[0])-delta
+			fmt.Printf(" <===> Expected Deviation of Party[%d]=%.6f\t", i, expDeviation[i])
+			fmt.Println()
 		}
 	}
 	fmt.Printf("\tDecrypt Time: done %s\n", elapsedDecParty)
