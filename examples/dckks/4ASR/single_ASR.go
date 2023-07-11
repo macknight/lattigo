@@ -77,6 +77,7 @@ var pathFormat = "../../datasets/%s/households_%d"
 
 const MAX_PARTY_ROWS = 20480 //241920
 const sectionSize = 2048     // element number within a section
+const atdSize = 2048         // element number of unique attacker data
 const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
 const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
 const STRATEGY_RANDOM = 3
@@ -85,16 +86,16 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
-var confidence_level float64
+var min_percent_matched int
 var attackLoop = 1000
 var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
 var performanceLoops = 1
-var uniqueATD int       // unique attacker data, 1 for true, 0 for false
-var currentDataset int  //water(1),electricity(2)
-var currentStrategy int //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
+var uniqueATD int = 1       // unique attacker data, 1 for true, 0 for false
+var currentDataset int = 1  //water(1),electricity(2)
+var currentStrategy int = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
 var transitionEqualityThreshold int
 var sectionNum int
 var usedRandomStartPartyPairs = map[int][]int{}
@@ -179,10 +180,10 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	for confidence := 1.0; confidence >= 0.5; confidence -= 0.05 {
-		confidence_level = confidence
+	for percent := 100; percent >= 80; percent -= 5 {
+		min_percent_matched = percent
 		fmt.Println("")
-		fmt.Printf("Confidence Level = %.2f\n", confidence)
+		fmt.Printf("Min Percent Matching Required = %d%%\n", min_percent_matched)
 		fmt.Println("====================================================================")
 		fmt.Println("")
 		process(fileList[:maxHouseholdsNumber], params)
@@ -202,7 +203,6 @@ func process(fileList []string, params ckks.Parameters) {
 
 	for en := 0; en < encryptedSectionNum; en++ {
 		fmt.Printf("------------------------------------------encryptedSectionNum = %d\n", en)
-
 		if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
 			_, entropyReduction, transitionReduction = markEncryptedSectionsByGlobalEntropyHightoLow(en, P, entropySum, transitionSum)
 		} else if currentStrategy == STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW {
@@ -249,17 +249,17 @@ func attackParties(P []*party) (attackSuccessNum int) {
 	} else {
 		for !valid {
 			randomStart = getRandomStart(randomParty)
-			var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+sectionSize]
-			if uniqueDataBlock(P, attacker_data_block, randomStart, "rawInput") {
+			var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+atdSize]
+			if uniqueDataBlock(P, attacker_data_block, randomParty, randomStart, "rawInput") {
 				valid = true
 			}
 		}
 	}
 
-	var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+sectionSize]
+	var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+atdSize]
 
 	var matched_households = identifyParty(P, attacker_data_block, randomParty, randomStart)
-	if len(matched_households) == 1 {
+	if len(matched_households) == 1 && matched_households[0] == randomParty {
 		attackSuccessNum++
 	}
 
@@ -274,7 +274,7 @@ func getRandomStart(party int) int {
 	var randomStart int
 
 	for !valid {
-		randomStart = getRandom(MAX_PARTY_ROWS - sectionSize)
+		randomStart = getRandom(MAX_PARTY_ROWS - atdSize)
 		if !contains(party, randomStart) {
 			usedRandomStartPartyPairs[party] = append(usedRandomStartPartyPairs[party], randomStart)
 			valid = true
@@ -299,7 +299,7 @@ func contains(party int, randomStart int) bool {
 	return contains
 }
 
-func uniqueDataBlock(P []*party, arr []float64, start int, input_type string) bool {
+func uniqueDataBlock(P []*party, arr []float64, party int, index int, input_type string) bool {
 	var unique bool = true
 
 	for pn, po := range P {
@@ -309,11 +309,11 @@ func uniqueDataBlock(P []*party, arr []float64, start int, input_type string) bo
 		} else {
 			household_data = po.encryptedInput
 		}
-		for i := 0; i < len(household_data)-sectionSize+1; i++ {
-			if start >= i && start < i+sectionSize {
+		for i := 0; i < len(household_data)-atdSize+1; i++ {
+			if pn == party && index >= i && index < i+atdSize {
 				continue
 			}
-			var target = household_data[i : i+sectionSize]
+			var target = household_data[i : i+atdSize]
 			if reflect.DeepEqual(target, arr) {
 				unique = false
 				usedRandomStartPartyPairs[pn] = append(usedRandomStartPartyPairs[pn], i)
@@ -330,16 +330,16 @@ func uniqueDataBlock(P []*party, arr []float64, start int, input_type string) bo
 func identifyParty(P []*party, arr []float64, party int, index int) []int {
 	var matched_households = []int{}
 
-	var dataset = P[party].encryptedInput[index : index+sectionSize]
+	var dataset = P[party].encryptedInput[index : index+atdSize]
 
 	// Minimum length of the array to be considered a match.
-	var min_length int = int(math.Ceil(float64(len(arr)) * confidence_level))
+	var min_length int = int(math.Ceil(float64(len(arr)) * float64(min_percent_matched) / 100))
 
 	if min_length == len(arr) {
-		// When confidence is 100%, we can compare the arrays straight away.
+		// When percent matched required is 100%, we can compare the arrays straight away.
 		if uniqueATD == 0 {
 			// If we are not using unique data blocks, need to check if it's an unique match
-			if reflect.DeepEqual(dataset, arr) && uniqueDataBlock(P, dataset, index, "encryptedInput") {
+			if reflect.DeepEqual(dataset, arr) && uniqueDataBlock(P, dataset, party, index, "encryptedInput") {
 				matched_households = append(matched_households, party)
 			}
 		} else {
@@ -348,9 +348,9 @@ func identifyParty(P []*party, arr []float64, party int, index int) []int {
 			}
 		}
 	} else {
-		// Otherwise, we need to compare each element of the arrays.
-		var match = 0
-		var mismatch = 0
+		// Otherwise, we need to compare each element of the arrays to see if matching percent meets the threshold.
+		var match int = 0
+		var mismatch int = 0
 		// For each element in the dataset, we compare it to the elements in the attack array.
 		for i := 0; i < len(arr); i++ {
 			// If the elements match, we increment the match counter.
@@ -366,11 +366,23 @@ func identifyParty(P []*party, arr []float64, party int, index int) []int {
 				break
 			}
 		}
-		if float64(match/len(arr)) >= confidence_level {
-			// If the matched portion meets the confidence level, we check if the data block is unique in the encrypted dataset.
-			var pos_match1 = P[party].encryptedInput[index : index+min_length]
-			var pos_match2 = P[party].encryptedInput[index+sectionSize-min_length : index+sectionSize]
-			if uniqueDataBlocks(P, pos_match1, pos_match2, index) {
+
+		if float64(match)/float64(len(arr)) >= float64(min_percent_matched)/100.0 {
+			var pos_matches = [][]float64{}
+			// If the matched portion meets the percent matched, we check if the data block is unique in the encrypted dataset.
+			if atdSize <= sectionSize {
+				// if the atd is <= to section, the possible encrypted portion can only be at the start or end of the section.
+				var pos_match1 = P[party].encryptedInput[index : index+min_length]
+				var post_match2 = P[party].encryptedInput[index+sectionSize-min_length : index+sectionSize]
+				pos_matches = append(pos_matches, pos_match1, post_match2)
+			} else {
+				// Otherwise, possible positions of encrypted portion could be anywhere in the section.
+				for i := 0; i <= len(arr)-min_length; i++ {
+					var pos_match = P[party].encryptedInput[index+i : index+min_length+i]
+					pos_matches = append(pos_matches, pos_match)
+				}
+			}
+			if uniqueDataBlocks(P, pos_matches, party, index) {
 				// If it is unique (only one match), we add the party to the list of matched households.
 				matched_households = append(matched_households, party)
 			}
@@ -380,19 +392,22 @@ func identifyParty(P []*party, arr []float64, party int, index int) []int {
 	return matched_households
 }
 
-func uniqueDataBlocks(P []*party, arr1 []float64, arr2 []float64, index int) bool {
+func uniqueDataBlocks(P []*party, pos_matches [][]float64, party int, index int) bool {
 	var unique bool = true
 
-	for _, po := range P {
-		var household_data []float64 = po.encryptedInput
-		for i := 0; i < len(household_data)-sectionSize+1; i++ {
-			if index >= i && index < i+sectionSize {
+	for i := 0; i < len(P); i++ {
+		var household = P[i]
+		var household_data []float64 = household.encryptedInput
+		for i := 0; i < len(household_data)-atdSize+1; i++ {
+			if i == party && index >= i && index < i+atdSize {
 				continue
 			}
-			var target = household_data[i : i+sectionSize]
-			if reflect.DeepEqual(target, arr1) || reflect.DeepEqual(target, arr2) {
-				unique = false
-				break
+			var target = household_data[i : i+atdSize]
+			for _, pos_match := range pos_matches {
+				if reflect.DeepEqual(target, pos_match) {
+					unique = false
+					break
+				}
 			}
 		}
 		if !unique {
