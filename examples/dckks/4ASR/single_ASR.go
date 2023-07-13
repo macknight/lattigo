@@ -113,9 +113,9 @@ func main() {
 		args = append(args, num)
 	}
 
-	currentStrategy = args[0]
-	currentDataset = args[1]
-	uniqueATD = args[2]
+	// currentStrategy = args[0]
+	// currentDataset = args[1]
+	// uniqueATD = args[2]
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
@@ -135,6 +135,9 @@ func main() {
 	} else {
 		fmt.Println("Unique Attacker Block: True")
 	}
+
+	fmt.Println("Attack Loop: ", attackLoop)
+	fmt.Println("Number of Households: ", maxHouseholdsNumber)
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
@@ -310,7 +313,7 @@ func uniqueDataBlock(P []*party, arr []float64, party int, index int, input_type
 			household_data = po.encryptedInput
 		}
 		for i := 0; i < len(household_data)-atdSize+1; i++ {
-			if pn == party && index >= i && index < i+atdSize {
+			if pn == party && index == i {
 				continue
 			}
 			var target = household_data[i : i+atdSize]
@@ -399,7 +402,7 @@ func uniqueDataBlocks(P []*party, pos_matches [][]float64, party int, index int)
 		var household = P[i]
 		var household_data []float64 = household.encryptedInput
 		for i := 0; i < len(household_data)-atdSize+1; i++ {
-			if i == party && index >= i && index < i+atdSize {
+			if i == party && index == i {
 				continue
 			}
 			var target = household_data[i : i+atdSize]
