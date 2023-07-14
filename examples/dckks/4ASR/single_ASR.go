@@ -77,7 +77,7 @@ var pathFormat = "../../datasets/%s/households_%d"
 
 const MAX_PARTY_ROWS = 20480 //241920
 const sectionSize = 2048     // element number within a section
-const atdSize = 2048         // element number of unique attacker data
+const atdSize = 24           // element number of unique attacker data
 const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
 const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
 const STRATEGY_RANDOM = 3
@@ -87,7 +87,7 @@ const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var min_percent_matched int
-var attackLoop = 1000
+var attackLoop = 100
 var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
@@ -113,9 +113,9 @@ func main() {
 		args = append(args, num)
 	}
 
-	// currentStrategy = args[0]
-	// currentDataset = args[1]
-	// uniqueATD = args[2]
+	currentStrategy = args[0]
+	currentDataset = args[1]
+	uniqueATD = args[2]
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
@@ -137,6 +137,7 @@ func main() {
 	}
 
 	fmt.Println("Attack Loop: ", attackLoop)
+	fmt.Println("ATD Size: ", atdSize)
 	fmt.Println("Number of Households: ", maxHouseholdsNumber)
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -184,7 +185,7 @@ func main() {
 		fmt.Println(err)
 	}
 	for percent := 100; percent >= 80; percent -= 5 {
-		min_percent_matched = percent
+		min_percent_matched = 100
 		fmt.Println("")
 		fmt.Printf("Min Percent Matching Required = %d%%\n", min_percent_matched)
 		fmt.Println("====================================================================")
@@ -198,13 +199,12 @@ func main() {
 func process(fileList []string, params ckks.Parameters) {
 	P := genparties(params, fileList)
 	_, _, _, _, _, entropySum, transitionSum := genInputs(P)
-	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", 0.0, entropySum, transitionSum)
 	encryptedSectionNum = sectionNum
 	// var plainSum []float64
 	var entropyReduction float64
 	var transitionReduction int
 
-	for en := 0; en < encryptedSectionNum; en++ {
+	for en := 0; en <= encryptedSectionNum; en++ {
 		fmt.Printf("------------------------------------------encryptedSectionNum = %d\n", en)
 		if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
 			_, entropyReduction, transitionReduction = markEncryptedSectionsByGlobalEntropyHightoLow(en, P, entropySum, transitionSum)
@@ -313,7 +313,7 @@ func uniqueDataBlock(P []*party, arr []float64, party int, index int, input_type
 			household_data = po.encryptedInput
 		}
 		for i := 0; i < len(household_data)-atdSize+1; i++ {
-			if pn == party && index == i {
+			if pn == party {
 				continue
 			}
 			var target = household_data[i : i+atdSize]
@@ -402,7 +402,7 @@ func uniqueDataBlocks(P []*party, pos_matches [][]float64, party int, index int)
 		var household = P[i]
 		var household_data []float64 = household.encryptedInput
 		for i := 0; i < len(household_data)-atdSize+1; i++ {
-			if i == party && index == i {
+			if i == party {
 				continue
 			}
 			var target = household_data[i : i+atdSize]
@@ -426,21 +426,23 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 	transitionReduction = 0
 	plainSum = make([]float64, len(P))
 
-	for _, po := range P {
-		if en == 0 {
-			for i := 0; i < len(po.flag); i++ {
-				po.flag[i] = i
+	if en != 0 {
+		for _, po := range P {
+			if en == 0 {
+				for i := 0; i < len(po.flag); i++ {
+					po.flag[i] = i
+				}
 			}
-		}
-		r := getRandom(encryptedSectionNum - en)
-		index := po.flag[r]
-		entropyReduction += po.entropy[index]
-		transitionReduction += po.transition[index]
-		po.flag[r] = po.flag[encryptedSectionNum-1-en]
-		po.flag[encryptedSectionNum-1-en] = index
-	} // mark randomly
+			r := getRandom(encryptedSectionNum - en)
+			index := po.flag[r]
+			entropyReduction += po.entropy[index]
+			transitionReduction += po.transition[index]
+			po.flag[r] = po.flag[encryptedSectionNum-1-en]
+			po.flag[encryptedSectionNum-1-en] = index
+		} // mark randomly
+	}
 
-	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
+	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
 	//for each threshold, prepare plainInput&input, and encryptedInput
 	for pi, po := range P {
@@ -475,25 +477,27 @@ func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySu
 	transitionReduction = 0
 	plainSum = make([]float64, len(P))
 
-	for k := 0; k < len(P); k++ {
-		max := -1.0
-		sIndex := -1
-		pIndex := -1
-		for pi, po := range P {
-			for si := 0; si < sectionNum; si++ {
-				if po.flag[si] != 1 && po.entropy[si] > max {
-					max = po.entropy[si]
-					sIndex = si
-					pIndex = pi
+	if en != 0 {
+		for k := 0; k < len(P); k++ {
+			max := -1.0
+			sIndex := -1
+			pIndex := -1
+			for pi, po := range P {
+				for si := 0; si < sectionNum; si++ {
+					if po.flag[si] != 1 && po.entropy[si] > max {
+						max = po.entropy[si]
+						sIndex = si
+						pIndex = pi
+					}
 				}
 			}
+			P[pIndex].flag[sIndex] = 1
+			entropyReduction += P[pIndex].entropy[sIndex]
+			transitionReduction += P[pIndex].transition[sIndex]
 		}
-		P[pIndex].flag[sIndex] = 1
-		entropyReduction += P[pIndex].entropy[sIndex]
-		transitionReduction += P[pIndex].transition[sIndex]
 	}
 
-	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
+	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
 	//for each threshold, prepare plainInput&input, and encryptedInput
 	for pi, po := range P {
@@ -525,21 +529,23 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 	transitionReduction = 0
 	plainSum = make([]float64, len(P))
 
-	for _, po := range P {
-		index := 0
-		max := -1.0
-		for j := 0; j < sectionNum; j++ {
-			if po.flag[j] != 1 && po.entropy[j] > max {
-				max = po.entropy[j]
-				index = j
+	if en != 0 {
+		for _, po := range P {
+			index := 0
+			max := -1.0
+			for j := 0; j < sectionNum; j++ {
+				if po.flag[j] != 1 && po.entropy[j] > max {
+					max = po.entropy[j]
+					index = j
+				}
 			}
-		}
-		po.flag[index] = 1 //po.flag has "sectionNumber" elements
-		entropyReduction += po.entropy[index]
-		transitionReduction += po.transition[index]
-	} // mark one block for each person
+			po.flag[index] = 1 //po.flag has "sectionNumber" elements
+			entropyReduction += po.entropy[index]
+			transitionReduction += po.transition[index]
+		} // mark one block for each person
+	}
 
-	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
+	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
 	//for each threshold, prepare plainInput&input, and encryptedInput
 	for pi, po := range P {
