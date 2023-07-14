@@ -87,8 +87,8 @@ const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var min_percent_matched int
-var attackLoop = 100
-var maxHouseholdsNumber = 80
+var attackLoop = 1
+var maxHouseholdsNumber = 1
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
@@ -376,7 +376,7 @@ func identifyParty(P []*party, arr []float64, party int, index int) []int {
 			if atdSize <= sectionSize {
 				// if the atd is <= to section, the possible encrypted portion can only be at the start or end of the section.
 				var pos_match1 = P[party].encryptedInput[index : index+min_length]
-				var post_match2 = P[party].encryptedInput[index+sectionSize-min_length : index+sectionSize]
+				var post_match2 = P[party].encryptedInput[index+atdSize-min_length : index+atdSize]
 				pos_matches = append(pos_matches, pos_match1, post_match2)
 			} else {
 				// Otherwise, possible positions of encrypted portion could be anywhere in the section.
