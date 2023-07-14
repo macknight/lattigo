@@ -237,6 +237,7 @@ func memberIdentificationAttack(P []*party) {
 		std = calculateStandardDeviation(sample)
 		standard_error = std / math.Sqrt(float64(len(sample)))
 		if standard_error <= 0.01 && attackCount >= 100 {
+			attackCount++
 			break
 		}
 	}
