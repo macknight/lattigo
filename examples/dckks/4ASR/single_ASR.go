@@ -226,13 +226,18 @@ func process(fileList []string, params ckks.Parameters) {
 func memberIdentificationAttack(P []*party) {
 	var attackSuccessNum int
 	sample = []float64{}
+	var std float64
+	var standard_error float64
 	for a := 0; a < attackLoop; a++ {
 		var successNum = attackParties(P)
 		attackSuccessNum += successNum
 		sample = append(sample, float64(successNum))
+		std = calculateStandardDeviation(sample)
+		standard_error = std / math.Sqrt(float64(len(sample)))
+		if standard_error > 0.05 {
+			break
+		}
 	}
-	var std float64 = calculateStandardDeviation(sample)
-	var standard_error float64 = std / math.Sqrt(float64(len(sample)))
 	fmt.Printf("<<<<<<<<<<<EncryptedSectionNum = %v, ASR = %.3f, Standard Error: %.3f\n", encryptedSectionNum, float64(attackSuccessNum)/float64(attackLoop), standard_error)
 
 }
