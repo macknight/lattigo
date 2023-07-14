@@ -87,8 +87,8 @@ const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var min_percent_matched int
-var attackLoop = 1
-var maxHouseholdsNumber = 1
+var max_attackLoop = 2000
+var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
@@ -135,8 +135,8 @@ func main() {
 	} else {
 		fmt.Println("Unique Attacker Block: True")
 	}
-
-	fmt.Println("Attack Loop: ", attackLoop)
+	fmt.Println("SE threshold ", 0.01)
+	fmt.Println("Max Attack Loop: ", max_attackLoop)
 	fmt.Println("ATD Size: ", atdSize)
 	fmt.Println("Number of Households: ", maxHouseholdsNumber)
 
@@ -184,7 +184,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	for percent := 100; percent >= 80; percent -= 5 {
+	for percent := 100; percent >= 80; percent -= 10 {
 		min_percent_matched = percent
 		fmt.Println("")
 		fmt.Printf("Min Percent Matching Required = %d%%\n", min_percent_matched)
@@ -225,15 +225,23 @@ func process(fileList []string, params ckks.Parameters) {
 
 func memberIdentificationAttack(P []*party) {
 	var attackSuccessNum int
+	var attackCount int
 	sample = []float64{}
-	for a := 0; a < attackLoop; a++ {
+	var std float64
+	var standard_error float64
+
+	for attackCount = 0; attackCount < max_attackLoop; attackCount++ {
 		var successNum = attackParties(P)
 		attackSuccessNum += successNum
 		sample = append(sample, float64(successNum))
+		std = calculateStandardDeviation(sample)
+		standard_error = std / math.Sqrt(float64(len(sample)))
+		if standard_error <= 0.01 && attackCount >= 100 {
+			attackCount++
+			break
+		}
 	}
-	var std float64 = calculateStandardDeviation(sample)
-	var standard_error float64 = std / math.Sqrt(float64(len(sample)))
-	fmt.Printf("<<<<<<<<<<<EncryptedSectionNum = %v, ASR = %.3f, Standard Error: %.3f\n", encryptedSectionNum, float64(attackSuccessNum)/float64(attackLoop), standard_error)
+	fmt.Printf("<<<<<<<<<<<EncryptedSectionNum = %v, ASR = %.3f, Standard Error: %.3f\n", encryptedSectionNum, float64(attackSuccessNum)/float64(attackCount), standard_error)
 
 }
 
@@ -421,46 +429,46 @@ func uniqueDataBlocks(P []*party, pos_matches [][]float64, party int, index int)
 }
 
 func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
-
 	entropyReduction = 0.0
+
 	transitionReduction = 0
+
 	plainSum = make([]float64, len(P))
 
 	if en != 0 {
 		for _, po := range P {
-			if en == 0 {
+			if en == 1 {
 				for i := 0; i < len(po.flag); i++ {
 					po.flag[i] = i
 				}
 			}
-			r := getRandom(encryptedSectionNum - en)
+
+			r := getRandom(encryptedSectionNum - en + 1)
 			index := po.flag[r]
 			entropyReduction += po.entropy[index]
 			transitionReduction += po.transition[index]
-			po.flag[r] = po.flag[encryptedSectionNum-1-en]
-			po.flag[encryptedSectionNum-1-en] = index
+			po.flag[r] = po.flag[encryptedSectionNum-en]
+			po.flag[encryptedSectionNum-en] = index
 		} // mark randomly
 	}
 
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
 	//for each threshold, prepare plainInput&input, and encryptedInput
+
 	for pi, po := range P {
 		po.input = make([][]float64, 0)
 		po.plainInput = make([]float64, 0)
 		po.encryptedInput = make([]float64, 0)
-
 		k := 0
 		for j := 0; j < globalPartyRows; j++ {
-			if j%sectionSize == 0 && j/sectionSize > len(po.flag)-(en+1)-1 {
+			if j%sectionSize == 0 && j/sectionSize > len(po.flag)-en-1 {
 				po.input = append(po.input, make([]float64, sectionSize))
 				k++
 			}
-
-			if j/sectionSize > len(po.flag)-(en+1)-1 {
+			if j/sectionSize > len(po.flag)-en-1 {
 				po.input[k-1][j%sectionSize] = po.rawInput[j]
 				po.encryptedInput = append(po.encryptedInput, -0.1)
-
 			} else {
 				plainSum[pi] += po.rawInput[j]
 				po.plainInput = append(po.plainInput, po.rawInput[j])
