@@ -426,46 +426,46 @@ func uniqueDataBlocks(P []*party, pos_matches [][]float64, party int, index int)
 }
 
 func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
-
 	entropyReduction = 0.0
+
 	transitionReduction = 0
+
 	plainSum = make([]float64, len(P))
 
 	if en != 0 {
 		for _, po := range P {
-			if en == 0 {
+			if en == 1 {
 				for i := 0; i < len(po.flag); i++ {
 					po.flag[i] = i
 				}
 			}
-			r := getRandom(encryptedSectionNum - en)
+
+			r := getRandom(encryptedSectionNum - en + 1)
 			index := po.flag[r]
 			entropyReduction += po.entropy[index]
 			transitionReduction += po.transition[index]
-			po.flag[r] = po.flag[encryptedSectionNum-1-en]
-			po.flag[encryptedSectionNum-1-en] = index
+			po.flag[r] = po.flag[encryptedSectionNum-en]
+			po.flag[encryptedSectionNum-en] = index
 		} // mark randomly
 	}
 
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
 	//for each threshold, prepare plainInput&input, and encryptedInput
+
 	for pi, po := range P {
 		po.input = make([][]float64, 0)
 		po.plainInput = make([]float64, 0)
 		po.encryptedInput = make([]float64, 0)
-
 		k := 0
 		for j := 0; j < globalPartyRows; j++ {
-			if j%sectionSize == 0 && j/sectionSize > len(po.flag)-(en+1)-1 {
+			if j%sectionSize == 0 && j/sectionSize > len(po.flag)-en-1 {
 				po.input = append(po.input, make([]float64, sectionSize))
 				k++
 			}
-
-			if j/sectionSize > len(po.flag)-(en+1)-1 {
+			if j/sectionSize > len(po.flag)-en-1 {
 				po.input[k-1][j%sectionSize] = po.rawInput[j]
 				po.encryptedInput = append(po.encryptedInput, -0.1)
-
 			} else {
 				plainSum[pi] += po.rawInput[j]
 				po.plainInput = append(po.plainInput, po.rawInput[j])
