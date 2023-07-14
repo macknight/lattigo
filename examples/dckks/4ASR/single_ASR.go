@@ -87,8 +87,8 @@ const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var min_percent_matched int
-var attackLoop = 1
-var maxHouseholdsNumber = 1
+var max_attackLoop = 2000
+var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
@@ -135,8 +135,8 @@ func main() {
 	} else {
 		fmt.Println("Unique Attacker Block: True")
 	}
-
-	fmt.Println("Attack Loop: ", attackLoop)
+	fmt.Println("SE threshold ", 0.01)
+	fmt.Println("Max Attack Loop: ", max_attackLoop)
 	fmt.Println("ATD Size: ", atdSize)
 	fmt.Println("Number of Households: ", maxHouseholdsNumber)
 
@@ -185,7 +185,7 @@ func main() {
 		fmt.Println(err)
 	}
 	for percent := 100; percent >= 80; percent -= 10 {
-		min_percent_matched = percent
+		min_percent_matched = 100
 		fmt.Println("")
 		fmt.Printf("Min Percent Matching Required = %d%%\n", min_percent_matched)
 		fmt.Println("====================================================================")
@@ -225,20 +225,22 @@ func process(fileList []string, params ckks.Parameters) {
 
 func memberIdentificationAttack(P []*party) {
 	var attackSuccessNum int
+	var attackCount int
 	sample = []float64{}
 	var std float64
 	var standard_error float64
-	for a := 0; a < attackLoop; a++ {
+
+	for attackCount = 0; attackCount < max_attackLoop; attackCount++ {
 		var successNum = attackParties(P)
 		attackSuccessNum += successNum
 		sample = append(sample, float64(successNum))
 		std = calculateStandardDeviation(sample)
 		standard_error = std / math.Sqrt(float64(len(sample)))
-		if standard_error > 0.05 {
+		if standard_error <= 0.01 && attackCount >= 100 {
 			break
 		}
 	}
-	fmt.Printf("<<<<<<<<<<<EncryptedSectionNum = %v, ASR = %.3f, Standard Error: %.3f\n", encryptedSectionNum, float64(attackSuccessNum)/float64(attackLoop), standard_error)
+	fmt.Printf("<<<<<<<<<<<EncryptedSectionNum = %v, ASR = %.3f, Standard Error: %.3f\n", encryptedSectionNum, float64(attackSuccessNum)/float64(attackCount), standard_error)
 
 }
 
