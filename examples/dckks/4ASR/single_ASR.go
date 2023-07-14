@@ -185,7 +185,7 @@ func main() {
 		fmt.Println(err)
 	}
 	for percent := 100; percent >= 80; percent -= 5 {
-		min_percent_matched = 100
+		min_percent_matched = percent
 		fmt.Println("")
 		fmt.Printf("Min Percent Matching Required = %d%%\n", min_percent_matched)
 		fmt.Println("====================================================================")
