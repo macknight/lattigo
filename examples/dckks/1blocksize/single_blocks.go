@@ -122,7 +122,7 @@ func main() {
 		fmt.Println("Error getting current working directory:", err)
 		return
 	}
-	wd = "c:\\Users\\23304161\\source\\repos\\lattigo"
+
 	var path string
 	if currentDataset == DATASET_WATER {
 		path = fmt.Sprintf(pathFormat, "water")
@@ -196,8 +196,6 @@ func process(fileList []string, params ckks.Parameters) {
 	}
 
 	//HE performance by loops
-	elapsedSummation = 0
-	elapsedDeviation = 0
 	for performanceLoop := 0; performanceLoop < performanceLoops; performanceLoop++ {
 		// fmt.Printf("<<<performanceLoop = [%d]\n", performanceLoop)
 		doHomomorphicOperations(params, P, expSummation, expAverage, expDeviation, plainSum)
