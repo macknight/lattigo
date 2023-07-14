@@ -99,8 +99,8 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
-var sectionSize int // element number within a section
-var MAX_PARTY_ROWS = 65536
+var sectionSize int        // element number within a section
+var MAX_PARTY_ROWS = 32768 //65536
 var maxHouseholdsNumber = 1
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
@@ -110,7 +110,7 @@ var currentDataset = 1  //water(1),electricity(2)
 var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
 var transitionEqualityThreshold int
 var sectionNum int
-var paramsDefs = []ckks.ParametersLiteral{ckks.PN10QP27CI, ckks.PN11QP54CI, ckks.PN12QP109CI, ckks.PN13QP218CI, ckks.PN14QP438CI, ckks.PN15QP880CI, ckks.PN16QP1761CI}
+var paramsDefs = []ckks.ParametersLiteral{ckks.PN10QP27CI, ckks.PN11QP54CI, ckks.PN12QP109CI, ckks.PN13QP218CI, ckks.PN14QP438CI, ckks.PN15QP880CI} //, ckks.PN16QP1761CI
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
@@ -150,7 +150,7 @@ func main() {
 		fmt.Println(err)
 	}
 
-	for sectionSize = 1024; sectionSize <= 65536; sectionSize *= 2 {
+	for sectionSize = 1024; sectionSize <= 32768; sectionSize *= 2 {
 		var paramsDef = paramsDefs[int(math.Log2(float64(sectionSize/1024)))]
 		params, err := ckks.NewParametersFromLiteral(paramsDef)
 		check(err)
@@ -177,7 +177,7 @@ func process(fileList []string, params ckks.Parameters) {
 	_ = maxEntropy
 
 	//mark blocks needing to be encrypted
-	fmt.Printf("entropy remain[initial] = %.3f; transition remain[initial] = %d\n", entropySum, transitionSum)
+	// fmt.Printf("entropy remain[initial] = %.3f; transition remain[initial] = %d\n", entropySum, transitionSum)
 	encryptedSectionNum = sectionNum
 	var plainSum []float64
 	var entropyReduction float64
@@ -197,7 +197,7 @@ func process(fileList []string, params ckks.Parameters) {
 
 	//HE performance by loops
 	for performanceLoop := 0; performanceLoop < performanceLoops; performanceLoop++ {
-		fmt.Printf("<<<performanceLoop = [%d]\n", performanceLoop)
+		// fmt.Printf("<<<performanceLoop = [%d]\n", performanceLoop)
 		doHomomorphicOperations(params, P, expSummation, expAverage, expDeviation, plainSum)
 	}
 	//performance prints
@@ -226,7 +226,7 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 		transitionSum -= transitionReduction
 	} // mark randomly
 
-	fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
+	// fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
 
 	//for each threshold, prepare plainInput&input
 	for pi, po := range P {
@@ -274,7 +274,7 @@ func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySu
 		transitionReduction += P[pIndex].transition[sIndex]
 	}
 
-	fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
+	// fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
 
 	//for each threshold, prepare plainInput&input
 	for pi, po := range P {
@@ -317,7 +317,7 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 		transitionReduction += po.transition[index]
 	} // mark one block for each person
 
-	fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
+	// fmt.Printf("entropy remain[%d] = %.3f (diff: %.3f), transition remain[%d] = %d (diff: %d)\n", en, entropySum-entropyReduction, entropyReduction, en, transitionSum-transitionReduction, transitionReduction)
 
 	//for each threshold, prepare plainInput&input
 	for pi, po := range P {
@@ -347,7 +347,7 @@ func showHomomorphicMeasure(loop int, params ckks.Parameters) {
 	fmt.Printf("***** Evaluating Summation time for %d households in thirdparty analyst's side: %s\n", maxHouseholdsNumber, time.Duration(elapsedSummation.Nanoseconds()/int64(loop)))
 	fmt.Printf("***** Evaluating Deviation time for %d households in thirdparty analyst's side: %s\n", maxHouseholdsNumber, time.Duration(elapsedDeviation.Nanoseconds()/int64(loop)))
 
-	fmt.Println("2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	// fmt.Println("2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 	//public key & relinearization key & rotation key
 	// fmt.Printf("*****Amortized SKG Time: %s\n", time.Duration(elapsedSKGParty.Nanoseconds()/int64(loop)))
@@ -365,7 +365,7 @@ func showHomomorphicMeasure(loop int, params ckks.Parameters) {
 	// fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystSummation.Nanoseconds()/int64(loop)))
 	// fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystVariance.Nanoseconds()/int64(loop)))
 
-	PrintMemUsage()
+	// PrintMemUsage()
 }
 
 func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, expAverage, expDeviation, plainSum []float64) {
@@ -464,7 +464,7 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 	elapsedAnalystVariance += time.Since(anaTime2)
 
 	// Decrypt & Print====================================================
-	fmt.Println("> Decrypt & Result:>>>>>>>>>>>>>")
+	// fmt.Println("> Decrypt & Result:>>>>>>>>>>>>>")
 
 	// print summation
 	ptresSummation := ckks.NewPlaintext(params, params.MaxLevel())
@@ -474,7 +474,7 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			encoder.Decode(ptresSummation, params.LogSlots())      //resSummation :=
 			// fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0])+plainSum[i])
 			// fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
-			fmt.Println()
+			// fmt.Println()
 		}
 	}
 
@@ -505,8 +505,8 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			// fmt.Println()
 		}
 	}
-	fmt.Printf("\tDecrypt Time: done %s\n", elapsedDecParty)
-	fmt.Println()
+	// fmt.Printf("\tDecrypt Time: done %s\n", elapsedDecParty)
+	// fmt.Println()
 
 	//print result
 	// visibleNum := 4
@@ -530,7 +530,7 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 	encInputsNegative = make([][]*rlwe.Ciphertext, len(P))
 
 	// Each party encrypts its input vector
-	fmt.Println("> Encrypt Phase<<<<<<<<<<<<<<<<<<")
+	// fmt.Println("> Encrypt Phase<<<<<<<<<<<<<<<<<<")
 	encryptor := ckks.NewEncryptor(params, pk)
 	pt := ckks.NewPlaintext(params, params.MaxLevel())
 
@@ -564,7 +564,7 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 		}
 	}, 2*len(P)) //2 encryption in function
 
-	fmt.Printf("\tdone  %s\n", elapsedEncryptParty)
+	// fmt.Printf("\tdone  %s\n", elapsedEncryptParty)
 
 	return
 }
