@@ -358,7 +358,7 @@ func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySu
 		entropyReduction += P[pIndex].entropy[sIndex]
 		transitionReduction += P[pIndex].transition[sIndex]
 	}
-
+	fmt.Print("----------------------------------------------->")
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
 	//for each threshold, prepare plainInput&input
@@ -401,7 +401,7 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 		entropyReduction += po.entropy[index]
 		transitionReduction += po.transition[index]
 	} // mark one block for each person
-
+	fmt.Print("----------------------------------------------->")
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
 	//for each threshold, prepare plainInput&input
