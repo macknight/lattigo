@@ -92,8 +92,6 @@ type task struct {
 //windows
 const pathFormat = "examples\\datasets\\%s\\households_%d"
 
-const MAX_PARTY_ROWS = 409600 //241920
-const sectionSize = 16384     // element number within a section
 const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
 const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
 const STRATEGY_RANDOM = 3
@@ -103,13 +101,18 @@ const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var attackLoop = 1
-var maxHouseholdsNumber = 2
+var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
-var performanceLoops = 1
+var performanceLoops = 10
+
+const MAX_PARTY_ROWS = 10240 // total reocrds per household
+const sectionSize = 2048     //block size
+
 var currentDataset = 1  //water(1),electricity(2)
 var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
+
 var transitionEqualityThreshold int
 var sectionNum int
 
@@ -120,7 +123,7 @@ func main() {
 
 	fileList := []string{}
 	var err error
-	paramsDef := ckks.PN14QP438CI // block size = 4096
+	paramsDef := ckks.PN11QP54CI // PN14QP438CI
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
 	if err != nil {
@@ -129,7 +132,7 @@ func main() {
 
 	// Get the current working directory
 	wd, err := os.Getwd()
-	wd = "c:\\Users\\23304161\\source\\repos\\lattigo"
+	// wd = "c:\\Users\\23304161\\source\\repos\\lattigo"
 	if err != nil {
 		fmt.Println("Error getting current working directory:", err)
 		return
@@ -181,7 +184,7 @@ func process(fileList []string, params ckks.Parameters) {
 	}
 
 	//mark blocks needing to be encrypted
-	// fmt.Printf("threshold = %.1f, entropy,transition remain = %.3f,%d\n", 0.0, entropySum, transitionSum)
+	fmt.Printf("threshold = %.1f, entropy,transition remain = %.3f,%d\n", 0.0, entropySum, transitionSum)
 
 	encryptedSectionNum = sectionNum
 	var plainSum []float64
@@ -202,15 +205,17 @@ func process(fileList []string, params ckks.Parameters) {
 
 		// fmt.Printf("<<<beging---encryptedSectionNum = [%d]\n", en)
 
-		memberIdentificationAttack(P) //under current partial encryption
+		// memberIdentificationAttack(P) //under current partial encryption
 
 		//HE performance by loops
+		elapsedSummation = 0.0
+		elapsedDeviation = 0.0
 		for performanceLoop := 0; performanceLoop < performanceLoops; performanceLoop++ {
-			fmt.Printf("<<<performanceLoop = [%d], encryptedSectionNum = [%d]\n", performanceLoop, en)
+			// fmt.Printf("<<<performanceLoop = [%d], encryptedSectionNum = [%d]\n", performanceLoop, en)
 			doHomomorphicOperations(params, P, expSummation, expAverage, expDeviation, plainSum)
 		}
 		// //performance prints
-		// showHomomorphicMeasure(performanceLoops, params)
+		showHomomorphicMeasure(performanceLoops, params)
 	}
 }
 
@@ -426,25 +431,25 @@ func showHomomorphicMeasure(loop int, params ckks.Parameters) {
 	fmt.Printf("***** Evaluating Summation time for %d households in thirdparty analyst's side: %s\n", maxHouseholdsNumber, time.Duration(elapsedSummation.Nanoseconds()/int64(loop)))
 	fmt.Printf("***** Evaluating Deviation time for %d households in thirdparty analyst's side: %s\n", maxHouseholdsNumber, time.Duration(elapsedDeviation.Nanoseconds()/int64(loop)))
 
-	fmt.Println("2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	// fmt.Println("2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-	//public key & relinearization key & rotation key
-	fmt.Printf("*****Amortized SKG Time: %s\n", time.Duration(elapsedSKGParty.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized PKG Time: %s\n", time.Duration(elapsedPKGParty.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized RKG Time: %s\n", time.Duration(elapsedRKGParty.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized RTG Time: %s\n", time.Duration(elapsedRTGParty.Nanoseconds()/int64(loop)))
+	// //public key & relinearization key & rotation key
+	// fmt.Printf("*****Amortized SKG Time: %s\n", time.Duration(elapsedSKGParty.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized PKG Time: %s\n", time.Duration(elapsedPKGParty.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized RKG Time: %s\n", time.Duration(elapsedRKGParty.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized RTG Time: %s\n", time.Duration(elapsedRTGParty.Nanoseconds()/int64(loop)))
 
-	//single operation, independent of households' size
-	fmt.Printf("*****Amortized Encrypt Time: %s\n", time.Duration(elapsedEncryptParty.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Decrypt Time: %s\n", time.Duration(elapsedDecParty.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Ciphertext Addition Time: %s\n", time.Duration(elapsedAddition.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Ciphertext Multiplication Time: %s\n", time.Duration(elapsedMultiplication.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Ciphertext Rotation Time: %s\n", time.Duration(elapsedRotation.Nanoseconds()/int64(loop*len(params.GaloisElementsForRowInnerSum()))))
+	// //single operation, independent of households' size
+	// fmt.Printf("*****Amortized Encrypt Time: %s\n", time.Duration(elapsedEncryptParty.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Decrypt Time: %s\n", time.Duration(elapsedDecParty.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Ciphertext Addition Time: %s\n", time.Duration(elapsedAddition.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Ciphertext Multiplication Time: %s\n", time.Duration(elapsedMultiplication.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Ciphertext Rotation Time: %s\n", time.Duration(elapsedRotation.Nanoseconds()/int64(loop*len(params.GaloisElementsForRowInnerSum()))))
 
-	fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystSummation.Nanoseconds()/int64(loop)))
-	fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystVariance.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystSummation.Nanoseconds()/int64(loop)))
+	// fmt.Printf("*****Amortized Analyst Time: %s\n", time.Duration(elapsedAnalystVariance.Nanoseconds()/int64(loop)))
 
-	PrintMemUsage()
+	// PrintMemUsage()
 }
 
 func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, expAverage, expDeviation, plainSum []float64) {
@@ -486,17 +491,17 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			if j == 0 {
 				tmpCiphertext = encInputsSummation[i][j]
 			} else {
-				elapsedSummation += runTimedParty(func() {
+				elapsedSummation += runTimed(func() {
 					evaluator.Add(tmpCiphertext, encInputsSummation[i][j], tmpCiphertext)
-				}, len(P))
+				})
 			}
 
 			if j == len(encInputsSummation[i])-1 {
-				elapsedSummation += runTimedParty(func() {
+				elapsedSummation += runTimed(func() {
 					elapsedRotation += runTimedParty(func() {
 						evaluator.InnerSum(tmpCiphertext, 1, params.Slots(), tmpCiphertext)
 					}, len(P))
-				}, len(P))
+				})
 				encSummationOuts[i] = tmpCiphertext
 			}
 		} //j
@@ -543,17 +548,17 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 	elapsedAnalystVariance += time.Since(anaTime2)
 
 	// Decrypt & Print====================================================
-	fmt.Println("> Decrypt & Result:>>>>>>>>>>>>>")
+	// fmt.Println("> Decrypt & Result:>>>>>>>>>>>>>")
 
 	// print summation
 	ptresSummation := ckks.NewPlaintext(params, params.MaxLevel())
 	for i, _ := range encSummationOuts {
 		if encSummationOuts[i] != nil {
-			decryptor.Decrypt(encSummationOuts[i], ptresSummation)            //ciphertext->plaintext
-			resSummation := encoder.Decode(ptresSummation, params.LogSlots()) //resSummation :=
-			fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0])+plainSum[i])
-			fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
-			fmt.Println()
+			decryptor.Decrypt(encSummationOuts[i], ptresSummation) //ciphertext->plaintext
+			encoder.Decode(ptresSummation, params.LogSlots())      //resSummation :=
+			// fmt.Printf("CKKS Summation of Party[%d]=%.6f\t", i, real(resSummation[0])+plainSum[i])
+			// fmt.Printf(" <===> Expected Summation of Party[%d]=%.6f\t", i, expSummation[i])
+			// fmt.Println()
 		}
 	}
 
@@ -567,7 +572,7 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			}, len(P))
 
 			// res := encoder.Decode(ptres, params.LogSlots())
-			resDeviation := encoder.Decode(ptresDeviation, params.LogSlots()) //resDeviation :=
+			encoder.Decode(ptresDeviation, params.LogSlots()) //resDeviation :=
 
 			// calculatedAverage := real(res[0])
 			// calculatedAverage := expAverage[i]
@@ -579,12 +584,12 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			//extra value for deviation
 			// delta := calculatedAverage * calculatedAverage * float64(len(resDeviation)-globalPartyRows) / float64(globalPartyRows)
 
-			fmt.Printf("CKKS Deviation of Party[%d]=%.6f\t", i, real(resDeviation[0])) //real(resDeviation[0])-delta
-			fmt.Printf(" <===> Expected Deviation of Party[%d]=%.6f\t", i, expDeviation[i])
-			fmt.Println()
+			// fmt.Printf("CKKS Deviation of Party[%d]=%.6f\t", i, real(resDeviation[0])) //real(resDeviation[0])-delta
+			// fmt.Printf(" <===> Expected Deviation of Party[%d]=%.6f\t", i, expDeviation[i])
+			// fmt.Println()
 		}
 	}
-	fmt.Printf("\tDecrypt Time: done %s\n", elapsedDecParty)
+	// fmt.Printf("\tDecrypt Time: done %s\n", elapsedDecParty)
 	// fmt.Println()
 
 	//print result
@@ -609,7 +614,7 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 	encInputsNegative = make([][]*rlwe.Ciphertext, len(P))
 
 	// Each party encrypts its input vector
-	fmt.Println("> Encrypt Phase<<<<<<<<<<<<<<<<<<")
+	// fmt.Println("> Encrypt Phase<<<<<<<<<<<<<<<<<<")
 	encryptor := ckks.NewEncryptor(params, pk)
 	pt := ckks.NewPlaintext(params, params.MaxLevel())
 
@@ -643,7 +648,7 @@ func encPhase(params ckks.Parameters, P []*party, pk *rlwe.PublicKey, encoder ck
 		}
 	}, 2*len(P)) //2 encryption in function
 
-	fmt.Printf("\tdone  %s\n", elapsedEncryptParty)
+	// fmt.Printf("\tdone  %s\n", elapsedEncryptParty)
 
 	return
 }
