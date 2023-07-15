@@ -75,7 +75,7 @@ var pathFormat = "../../datasets/%s/households_%d"
 // windows
 // const pathFormat = "examples\\datasets\\%s\\households_%d"
 
-const MAX_PARTY_ROWS = 20480 //241920
+const MAX_PARTY_ROWS = 10240 //241920
 const sectionSize = 2048     // element number within a section
 const atdSize = 24           // element number of unique attacker data
 const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
@@ -248,17 +248,18 @@ func memberIdentificationAttack(P []*party) {
 func attackParties(P []*party) (attackSuccessNum int) {
 	// fmt.Println("starting attack>>>>>>>>>>>>>")
 	attackSuccessNum = 0
-	randomParty := getRandom(maxHouseholdsNumber)
-	// fmt.Println("randomParty: ", randomParty)
 
 	var valid = false
+	var randomParty int
 	var randomStart int
 	// fmt.Printf("attacking at Party[%d], position[%d]\n", randomParty, randomStart)
 
 	if uniqueATD == 0 {
+		randomParty = getRandom(maxHouseholdsNumber)
 		randomStart = getRandomStart(randomParty)
 	} else {
 		for !valid {
+			randomParty = getRandom(maxHouseholdsNumber)
 			randomStart = getRandomStart(randomParty)
 			var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+atdSize]
 			if uniqueDataBlock(P, attacker_data_block, randomParty, randomStart, "rawInput") {
