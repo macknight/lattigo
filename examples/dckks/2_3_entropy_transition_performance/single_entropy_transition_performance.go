@@ -108,7 +108,7 @@ var globalPartyRows = -1
 var performanceLoops = 10
 
 const MAX_PARTY_ROWS = 10240 // total reocrds per household
-const sectionSize = 8192     //block size, 2048 for summation correctness, 8192 for variance correctness
+const sectionSize = 2048     //block size, 2048 for summation correctness, 8192 for variance correctness
 
 var currentDataset = 1  //water(1),electricity(2)
 var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
@@ -123,7 +123,7 @@ func main() {
 
 	fileList := []string{}
 	var err error
-	paramsDef := ckks.PN13QP218CI // PN11QP54CI for summation correctness, PN13QP218CI for variance correctness
+	paramsDef := ckks.PN11QP54CI // PN11QP54CI for summation correctness, PN13QP218CI for variance correctness
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
 	if err != nil {
