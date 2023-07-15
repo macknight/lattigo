@@ -248,17 +248,18 @@ func memberIdentificationAttack(P []*party) {
 func attackParties(P []*party) (attackSuccessNum int) {
 	// fmt.Println("starting attack>>>>>>>>>>>>>")
 	attackSuccessNum = 0
-	randomParty := getRandom(maxHouseholdsNumber)
-	// fmt.Println("randomParty: ", randomParty)
 
 	var valid = false
+	var randomParty int
 	var randomStart int
 	// fmt.Printf("attacking at Party[%d], position[%d]\n", randomParty, randomStart)
 
 	if uniqueATD == 0 {
+		randomParty = getRandom(maxHouseholdsNumber)
 		randomStart = getRandomStart(randomParty)
 	} else {
 		for !valid {
+			randomParty = getRandom(maxHouseholdsNumber)
 			randomStart = getRandomStart(randomParty)
 			var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+atdSize]
 			if uniqueDataBlock(P, attacker_data_block, randomParty, randomStart, "rawInput") {
