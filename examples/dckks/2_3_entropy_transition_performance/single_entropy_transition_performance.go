@@ -108,7 +108,7 @@ var globalPartyRows = -1
 var performanceLoops = 10
 
 const MAX_PARTY_ROWS = 10240 // total reocrds per household
-const sectionSize = 2048     //block size
+const sectionSize = 8192     //block size, 2048 for summation correctness, 8192 for variance correctness
 
 var currentDataset = 1  //water(1),electricity(2)
 var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
@@ -123,7 +123,7 @@ func main() {
 
 	fileList := []string{}
 	var err error
-	paramsDef := ckks.PN11QP54CI // PN14QP438CI
+	paramsDef := ckks.PN13QP218CI // PN11QP54CI for summation correctness, PN13QP218CI for variance correctness
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
 	if err != nil {
@@ -310,6 +310,7 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 		po.flag[encryptedSectionNum-1-en] = index
 	} // mark randomly
 
+	fmt.Print("----------------------------------------------->")
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
 	//for each threshold, prepare plainInput&input
