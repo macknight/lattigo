@@ -75,7 +75,7 @@ var pathFormat = "../../datasets/%s/households_%d"
 // windows
 // const pathFormat = "examples\\datasets\\%s\\households_%d"
 
-const MAX_PARTY_ROWS = 20480 //241920
+const MAX_PARTY_ROWS = 10240 //241920
 const sectionSize = 2048     // element number within a section
 const atdSize = 24           // element number of unique attacker data
 const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
