@@ -105,7 +105,7 @@ var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
-var performanceLoops = 10
+var performanceLoops = 1
 
 const MAX_PARTY_ROWS = 10240 // total reocrds per household
 const sectionSize = 2048     //block size, 2048 for summation correctness, 8192 for variance correctness
@@ -310,7 +310,7 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 		po.flag[encryptedSectionNum-1-en] = index
 	} // mark randomly
 
-	fmt.Print("----------------------------------------------->")
+	fmt.Println("----------------------------------------------->")
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
 	//for each threshold, prepare plainInput&input
@@ -358,7 +358,7 @@ func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySu
 		entropyReduction += P[pIndex].entropy[sIndex]
 		transitionReduction += P[pIndex].transition[sIndex]
 	}
-	fmt.Print("----------------------------------------------->")
+	fmt.Println("----------------------------------------------->")
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
 	//for each threshold, prepare plainInput&input
@@ -401,7 +401,7 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 		entropyReduction += po.entropy[index]
 		transitionReduction += po.transition[index]
 	} // mark one block for each person
-	fmt.Print("----------------------------------------------->")
+	fmt.Println("----------------------------------------------->")
 	fmt.Printf("threshold = %.1f, entropy/transition remain = %.3f,%d\n", float64(en+1)/float64(encryptedSectionNum), entropySum-entropyReduction, transitionSum-transitionReduction)
 
 	//for each threshold, prepare plainInput&input
