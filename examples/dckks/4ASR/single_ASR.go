@@ -77,7 +77,6 @@ var pathFormat = "../../datasets/%s/households_%d"
 
 const MAX_PARTY_ROWS = 10240 //241920
 const sectionSize = 2048     // element number within a section
-const atdSize = 24           // element number of unique attacker data
 const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
 const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
 const STRATEGY_RANDOM = 3
@@ -86,6 +85,7 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
+var atdSize = 24 // element number of unique attacker data
 var min_percent_matched int
 var max_attackLoop = 2000
 var maxHouseholdsNumber = 80
@@ -230,18 +230,22 @@ func memberIdentificationAttack(P []*party) {
 	var std float64
 	var standard_error float64
 
-	for attackCount = 0; attackCount < max_attackLoop; attackCount++ {
-		var successNum = attackParties(P)
-		attackSuccessNum += successNum
-		sample = append(sample, float64(successNum))
-		std = calculateStandardDeviation(sample)
-		standard_error = std / math.Sqrt(float64(len(sample)))
-		if standard_error <= 0.01 && attackCount >= 100 {
-			attackCount++
-			break
+	for size := 3; size <= 48; size += 3 {
+		atdSize = size
+		attackSuccessNum = 0
+		for attackCount = 0; attackCount < max_attackLoop; attackCount++ {
+			var successNum = attackParties(P)
+			attackSuccessNum += successNum
+			sample = append(sample, float64(successNum))
+			std = calculateStandardDeviation(sample)
+			standard_error = std / math.Sqrt(float64(len(sample)))
+			if standard_error <= 0.01 && attackCount >= 100 {
+				attackCount++
+				break
+			}
 		}
+		fmt.Printf("atdSize = %d, ASR = %.3f, Standard Error: %.3f\n", atdSize, float64(attackSuccessNum)/float64(attackCount), standard_error)
 	}
-	fmt.Printf("<<<<<<<<<<<EncryptedSectionNum = %v, ASR = %.3f, Standard Error: %.3f\n", encryptedSectionNum, float64(attackSuccessNum)/float64(attackCount), standard_error)
 
 }
 
