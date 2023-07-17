@@ -98,7 +98,6 @@ var currentStrategy int = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoL
 var transitionEqualityThreshold int
 var sectionNum int
 var usedRandomStartPartyPairs = map[int][]int{}
-var sample = []float64{}
 
 func main() {
 	var args []int
@@ -223,15 +222,14 @@ func process(fileList []string, params ckks.Parameters) {
 }
 
 func memberIdentificationAttack(P []*party) {
-	var attackSuccessNum int
-	var attackCount int
-	sample = []float64{}
-	var std float64
-	var standard_error float64
 
 	for size := 3; size <= 48; size += 3 {
 		atdSize = size
-		attackSuccessNum = 0
+		var attackSuccessNum int
+		var attackCount int
+		var sample = []float64{}
+		var std float64
+		var standard_error float64
 		for attackCount = 0; attackCount < max_attackLoop; attackCount++ {
 			var successNum = attackParties(P)
 			attackSuccessNum += successNum
