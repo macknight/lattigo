@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lazybeaver/entropy"
 	"github.com/tuneinsight/lattigo/v4/ckks"
 	"github.com/tuneinsight/lattigo/v4/drlwe"
 	"github.com/tuneinsight/lattigo/v4/rlwe"
@@ -57,7 +56,7 @@ type party struct {
 	encryptedInput []float64   //encrypted data of raw (encrypted value are -0.1)
 	flag           []int
 	group          []int
-	entropy        []float64
+	entropy        []float64 //entropy for block
 	transition     []int
 }
 
@@ -637,6 +636,8 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 	sectionNum = 0
 	minEntropy = math.MaxFloat64
 	maxEntropy = float64(-1)
+	frequencyMap := map[float64]int{}
+	entropyMap := map[float64]float64{}
 
 	entropySum = 0.0
 	transitionSum = 0
@@ -647,7 +648,7 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 			lenPartyRows = MAX_PARTY_ROWS
 		}
 
-		if pi == 0 {
+		if globalPartyRows == -1 {
 			sectionNum = lenPartyRows / sectionSize
 			if lenPartyRows%sectionSize != 0 {
 				sectionNum++
@@ -662,42 +663,26 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 			check(err)
 		}
 
-		po.rawInput = make([]float64, lenPartyRows)
+		po.rawInput = make([]float64, globalPartyRows)
+
 		po.flag = make([]int, sectionNum)
 		po.entropy = make([]float64, sectionNum)
 		po.transition = make([]int, sectionNum)
 		po.group = make([]int, sectionSize)
 
-		tmpStr := ""
-		transitionInsideSection := 0
 		for i := range po.rawInput {
-			po.rawInput[i] = partyRows[i]
+			po.rawInput[i] = math.Round(partyRows[i]*1000) / 1000 // hold 3 decimal places
+
+			val, exists := frequencyMap[po.rawInput[i]]
+			if exists {
+				val++
+			} else {
+				val = 1
+			}
+			frequencyMap[po.rawInput[i]] = val
+
 			expSummation[pi] += po.rawInput[i]
-			if i > 0 && !almostEqual(po.rawInput[i], po.rawInput[i-1]) {
-				transitionInsideSection++
-			}
-			//count transitions of each section
-			tmpStr += fmt.Sprintf("%f", po.rawInput[i])
-			if i%sectionSize == sectionSize-1 || i == len(po.rawInput)-1 {
-				//transition
-				po.transition[i/sectionSize] = transitionInsideSection
-				transitionSum += transitionInsideSection
-				transitionInsideSection = 0
-				//entropy
-				entropyVal, shannonErr := entropy.Shannon(tmpStr)
-				check(shannonErr)
-				if entropyVal > maxEntropy {
-					maxEntropy = entropyVal
-				}
-				if entropyVal < minEntropy {
-					minEntropy = entropyVal
-				}
-				po.entropy[i/sectionSize] = entropyVal
-				tmpStr = ""
-				entropySum += entropyVal
-				// fmt.Printf("po.entropy[%d] = %.6f\n", i/sectionSize, po.entropy[i/sectionSize])
-			}
-		} //each line
+		} //each line of one person
 
 		expAverage[pi] = expSummation[pi] / float64(globalPartyRows)
 		for i := range po.rawInput {
@@ -706,6 +691,36 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 		}
 		expDeviation[pi] /= float64(globalPartyRows)
 	} // each person
+
+	totalRecords := maxHouseholdsNumber * MAX_PARTY_ROWS
+	for k, _ := range frequencyMap {
+		possibility := float64(frequencyMap[k]) / float64(totalRecords)
+		entropyMap[k] = -possibility * math.Log2(possibility)
+	}
+
+	//maxEntropy,minEntropy
+	for _, po := range P {
+		for i := range po.rawInput {
+			singleRecordEntropy := entropyMap[po.rawInput[i]] / float64(frequencyMap[po.rawInput[i]])
+			po.entropy[i/sectionSize] += singleRecordEntropy
+			entropySum += singleRecordEntropy
+			if i > 0 && !almostEqual(po.rawInput[i], po.rawInput[i-1]) {
+				po.transition[i/sectionSize] += 1
+				transitionSum++
+			}
+		}
+	}
+
+	for _, po := range P {
+		for sIndex := range po.entropy {
+			if po.entropy[sIndex] > maxEntropy {
+				maxEntropy = po.entropy[sIndex]
+			}
+			if po.entropy[sIndex] < minEntropy {
+				minEntropy = po.entropy[sIndex]
+			}
+		}
+	}
 
 	return
 }
