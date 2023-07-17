@@ -86,8 +86,8 @@ const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var atdSize = 24 // element number of unique attacker data
 var min_percent_matched int
-var max_attackLoop = 2000
-var maxHouseholdsNumber = 80
+var max_attackLoop = 10
+var maxHouseholdsNumber = 5
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
@@ -222,7 +222,6 @@ func process(fileList []string, params ckks.Parameters) {
 }
 
 func memberIdentificationAttack(P []*party) {
-
 	for size := 3; size <= 48; size += 3 {
 		atdSize = size
 		var attackSuccessNum int
@@ -413,7 +412,7 @@ func uniqueDataBlocks(P []*party, pos_matches [][]float64, party int, index int,
 			continue
 		}
 		var household_data []float64 = po.encryptedInput
-		for i := 0; i < len(household_data)-atdSize+1; i++ {
+		for i := 0; i < len(household_data)-min_length+1; i++ {
 			var target = household_data[i : i+min_length]
 			for _, pos_match := range pos_matches {
 				if reflect.DeepEqual(target, pos_match) {
@@ -646,7 +645,7 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 			lenPartyRows = MAX_PARTY_ROWS
 		}
 
-		if globalPartyRows == -1 {
+		if pi == 0 {
 			sectionNum = lenPartyRows / sectionSize
 			if lenPartyRows%sectionSize != 0 {
 				sectionNum++
