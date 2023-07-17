@@ -86,8 +86,8 @@ const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var atdSize = 24 // element number of unique attacker data
 var min_percent_matched int
-var max_attackLoop = 10
-var maxHouseholdsNumber = 5
+var max_attackLoop = 2000
+var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
