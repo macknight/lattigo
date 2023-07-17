@@ -99,13 +99,13 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
-var sectionSize int        // element number within a section
-var MAX_PARTY_ROWS = 32768 //65536
-var maxHouseholdsNumber = 1
-var NGoRoutine int = 1 // Default number of Go routines
+var sectionSize int // element number within a section
+var MAX_PARTY_ROWS = 32768
+var maxHouseholdsNumber = 1 //const to 1 with 32768 records for testing block sizes
+var NGoRoutine int = 1      // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
-var performanceLoops = 1000
+var performanceLoops = 1
 var currentDataset = 1  //water(1),electricity(2)
 var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
 var transitionEqualityThreshold int
@@ -157,6 +157,7 @@ func main() {
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
+		fmt.Println("-------------------------->")
 		fmt.Printf("SectionSize = %d\n", sectionSize)
 		process(fileList[:maxHouseholdsNumber], params)
 	}
@@ -343,11 +344,11 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 
 func showHomomorphicMeasure(loop int, params ckks.Parameters) {
 
-	fmt.Println("1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	fmt.Println("1====")
 	fmt.Printf("***** Evaluating Summation time for %d households in thirdparty analyst's side: %s\n", maxHouseholdsNumber, time.Duration(elapsedSummation.Nanoseconds()/int64(loop)))
 	fmt.Printf("***** Evaluating Deviation time for %d households in thirdparty analyst's side: %s\n", maxHouseholdsNumber, time.Duration(elapsedDeviation.Nanoseconds()/int64(loop)))
 
-	// fmt.Println("2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	// fmt.Println("2====")
 
 	//public key & relinearization key & rotation key
 	// fmt.Printf("*****Amortized SKG Time: %s\n", time.Duration(elapsedSKGParty.Nanoseconds()/int64(loop)))
@@ -407,17 +408,17 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 			if j == 0 {
 				tmpCiphertext = encInputsSummation[i][j]
 			} else {
-				elapsedSummation += runTimedParty(func() {
+				elapsedSummation += runTimed(func() {
 					evaluator.Add(tmpCiphertext, encInputsSummation[i][j], tmpCiphertext)
-				}, len(P))
+				})
 			}
 
 			if j == len(encInputsSummation[i])-1 {
-				elapsedSummation += runTimedParty(func() {
+				elapsedSummation += runTimed(func() {
 					elapsedRotation += runTimedParty(func() {
 						evaluator.InnerSum(tmpCiphertext, 1, params.Slots(), tmpCiphertext)
 					}, len(P))
-				}, len(P))
+				})
 				encSummationOuts[i] = tmpCiphertext
 			}
 		} //j
@@ -434,7 +435,7 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 				avergeCiphertext = encSummationOuts[i].CopyNew()
 				avergeCiphertext.Scale = avergeCiphertext.Mul(rlwe.NewScale(globalPartyRows))
 			}
-			elapsedDeviation += runTimedParty(func() {
+			elapsedDeviation += runTimed(func() {
 				elapsedAddition += runTimedParty(func() {
 					evaluator.Add(encInputsNegative[i][j], avergeCiphertext, encInputsNegative[i][j])
 				}, len(P))
@@ -458,7 +459,7 @@ func doHomomorphicOperations(params ckks.Parameters, P []*party, expSummation, e
 					tmpCiphertext.Scale = tmpCiphertext.Mul(rlwe.NewScale(globalPartyRows))
 					encDeviationOuts[i] = tmpCiphertext
 				}
-			}, len(P))
+			})
 		} //j
 	} //i
 	elapsedAnalystVariance += time.Since(anaTime2)
