@@ -315,6 +315,9 @@ func uniqueDataBlock(P []*party, arr []float64, party int, index int, input_type
 	var unique bool = true
 
 	for pn, po := range P {
+		if pn == party {
+			continue
+		}
 		var household_data []float64
 		if input_type == "rawInput" {
 			household_data = po.rawInput
@@ -322,9 +325,6 @@ func uniqueDataBlock(P []*party, arr []float64, party int, index int, input_type
 			household_data = po.encryptedInput
 		}
 		for i := 0; i < len(household_data)-atdSize+1; i++ {
-			if pn == party {
-				continue
-			}
 			var target = household_data[i : i+atdSize]
 			if reflect.DeepEqual(target, arr) {
 				unique = false
@@ -394,7 +394,7 @@ func identifyParty(P []*party, arr []float64, party int, index int) []int {
 					pos_matches = append(pos_matches, pos_match)
 				}
 			}
-			if uniqueDataBlocks(P, pos_matches, party, index) {
+			if uniqueDataBlocks(P, pos_matches, party, index, min_length) {
 				// If it is unique (only one match), we add the party to the list of matched households.
 				matched_households = append(matched_households, party)
 			}
@@ -404,17 +404,16 @@ func identifyParty(P []*party, arr []float64, party int, index int) []int {
 	return matched_households
 }
 
-func uniqueDataBlocks(P []*party, pos_matches [][]float64, party int, index int) bool {
+func uniqueDataBlocks(P []*party, pos_matches [][]float64, party int, index int, min_length int) bool {
 	var unique bool = true
 
-	for i := 0; i < len(P); i++ {
-		var household = P[i]
-		var household_data []float64 = household.encryptedInput
+	for pn, po := range P {
+		if pn == party {
+			continue
+		}
+		var household_data []float64 = po.encryptedInput
 		for i := 0; i < len(household_data)-atdSize+1; i++ {
-			if i == party {
-				continue
-			}
-			var target = household_data[i : i+atdSize]
+			var target = household_data[i : i+min_length]
 			for _, pos_match := range pos_matches {
 				if reflect.DeepEqual(target, pos_match) {
 					unique = false
