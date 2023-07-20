@@ -42,6 +42,11 @@ var elapsedRotation time.Duration
 
 var elapsedSummation time.Duration
 var elapsedDeviation time.Duration
+var tmpTimeSummation time.Duration
+var tmpTimeDeviation time.Duration
+
+var standardErrorSummation float64
+var standardErrorDeviation float64
 
 var elapsedAnalystSummation time.Duration
 var elapsedAnalystVariance time.Duration
@@ -104,8 +109,8 @@ var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
-var performanceLoops = 1
 
+const PERFORMANCE_LOOPS = 1000
 const MAX_PARTY_ROWS = 10240 // total reocrds per household
 const sectionSize = 1024     //block size, 2048 for summation correctness, 8192 for variance correctness
 
@@ -208,14 +213,33 @@ func process(fileList []string, params ckks.Parameters) {
 		// memberIdentificationAttack(P) //under current partial encryption
 
 		//HE performance by loops
+
+		// var summationSample = []float64{}
+		// var DeviationSample = []float64{}
+		performanceLoop := 1
 		elapsedSummation = 0.0
 		elapsedDeviation = 0.0
-		for performanceLoop := 0; performanceLoop < performanceLoops; performanceLoop++ {
+		for ; performanceLoop <= PERFORMANCE_LOOPS; performanceLoop++ {
+			// elapsedSummation = 0.0
+			// elapsedDeviation = 0.0
 			// fmt.Printf("<<<performanceLoop = [%d], encryptedSectionNum = [%d]\n", performanceLoop, en)
 			doHomomorphicOperations(params, P, expSummation, expAverage, expDeviation, plainSum)
+			// summationSample = append(summationSample, float64(elapsedSummation))
+			// DeviationSample = append(DeviationSample, float64(elapsedDeviation))
+			// tmpTimeSummation += elapsedSummation
+			// tmpTimeDeviation += elapsedDeviation
+			// if PERFORMANCE_LOOPS >= 100 {
+			// 	standardErrorSummation = calculateStandardError(summationSample)
+			// 	standardErrorDeviation = calculateStandardError(summationSample)
+			// 	if standardErrorSummation <= 0.01 && standardErrorDeviation <= 0.01 {
+			// 		break
+			// 	}
+			// }
 		}
-		// //performance prints
-		showHomomorphicMeasure(performanceLoops, params)
+		// performance prints
+		// elapsedSummation = tmpTimeSummation
+		// elapsedDeviation = tmpTimeDeviation
+		showHomomorphicMeasure(performanceLoop, params)
 	}
 }
 
@@ -429,6 +453,7 @@ func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entrop
 func showHomomorphicMeasure(loop int, params ckks.Parameters) {
 
 	// fmt.Println("1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	fmt.Printf("standardError: %.3f, %.3f\n", standardErrorSummation, standardErrorDeviation)
 	fmt.Printf("***** Evaluating Summation time for %d households in thirdparty analyst's side: %s\n", maxHouseholdsNumber, time.Duration(elapsedSummation.Nanoseconds()/int64(loop)))
 	fmt.Printf("***** Evaluating Deviation time for %d households in thirdparty analyst's side: %s\n", maxHouseholdsNumber, time.Duration(elapsedDeviation.Nanoseconds()/int64(loop)))
 
@@ -835,4 +860,30 @@ func PrintMemUsage() {
 
 func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
+}
+
+func calculateStandardError(numbers []float64) float64 {
+	standardDeviation := calculateStandardDeviation(numbers)
+	standard_error := standardDeviation / math.Sqrt(float64(len(numbers)))
+	return standard_error
+}
+
+func calculateStandardDeviation(numbers []float64) float64 {
+	var sum float64
+	for _, num := range numbers {
+		sum += num
+	}
+	mean := sum / float64(len(numbers))
+
+	var squaredDifferences float64
+	for _, num := range numbers {
+		difference := num - mean
+		squaredDifferences += difference * difference
+	}
+
+	variance := squaredDifferences / (float64(len(numbers)) - 1)
+
+	standardDeviation := math.Sqrt(variance)
+
+	return standardDeviation
 }
