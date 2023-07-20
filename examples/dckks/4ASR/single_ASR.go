@@ -98,6 +98,7 @@ var currentStrategy int = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoL
 var transitionEqualityThreshold int
 var sectionNum int
 var usedRandomStartPartyPairs = map[int][]int{}
+var usedHouses = map[int]int{}
 
 func main() {
 	var args []int
@@ -188,7 +189,22 @@ func main() {
 		fmt.Printf("Min Percent Matching Required = %d%%\n", min_percent_matched)
 		fmt.Println("====================================================================")
 		fmt.Println("")
-		process(fileList[:maxHouseholdsNumber], params)
+		if maxHouseholdsNumber == 80 {
+			process(fileList, params)
+		} else {
+			usedHouses = map[int]int{}
+			randomHouses := []string{}
+			for i := 0; i < maxHouseholdsNumber; i++ {
+				var randomHouse = getRandom(80)
+				if _, exists := usedHouses[randomHouse]; !exists {
+					usedHouses[randomHouse] = 1
+					randomHouses = append(randomHouses, fileList[randomHouse])
+				} else {
+					i--
+				}
+			}
+			process(randomHouses, params)
+		}
 	}
 	fmt.Printf("Main() Done in %s \n", time.Since(start))
 }
