@@ -85,7 +85,7 @@ const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var atdSize = 24 // element number of unique attacker data
-var min_percent_matched int
+var min_percent_matched = 100
 var max_attackLoop = 2000
 var maxHouseholdsNumber = 80
 var NGoRoutine int = 1 // Default number of Go routines
