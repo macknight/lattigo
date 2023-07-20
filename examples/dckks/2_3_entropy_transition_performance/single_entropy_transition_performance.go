@@ -107,7 +107,7 @@ var globalPartyRows = -1
 var performanceLoops = 1
 
 const MAX_PARTY_ROWS = 10240 // total reocrds per household
-const sectionSize = 2048     //block size, 2048 for summation correctness, 8192 for variance correctness
+const sectionSize = 1024     //block size, 2048 for summation correctness, 8192 for variance correctness
 
 var currentDataset = 1  //water(1),electricity(2)
 var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
