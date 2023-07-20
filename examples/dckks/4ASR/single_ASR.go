@@ -75,7 +75,7 @@ var pathFormat = "../../datasets/%s/households_%d"
 // const pathFormat = "examples\\datasets\\%s\\households_%d"
 
 const MAX_PARTY_ROWS = 10240 //241920
-const sectionSize = 2048     // element number within a section
+const sectionSize = 1024     // element number within a section
 const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
 const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
 const STRATEGY_RANDOM = 3
@@ -145,7 +145,7 @@ func main() {
 	start := time.Now()
 	fileList := []string{}
 	var err error
-	paramsDef := ckks.PN11QP54CI // block size = 4096
+	paramsDef := ckks.PN10QP27CI
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
 	if err != nil {
