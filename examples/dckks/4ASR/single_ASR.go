@@ -192,6 +192,7 @@ func main() {
 		if maxHouseholdsNumber == 80 {
 			process(fileList, params)
 		} else {
+			// randomly select maxHouseholdsNumber households
 			usedHouses = map[int]int{}
 			randomHouses := []string{}
 			for i := 0; i < maxHouseholdsNumber; i++ {
@@ -214,7 +215,6 @@ func process(fileList []string, params ckks.Parameters) {
 	P := genparties(params, fileList)
 	_, _, _, _, _, entropySum, transitionSum := genInputs(P)
 	encryptedSectionNum = sectionNum
-	// var plainSum []float64
 	var entropyReduction float64
 	var transitionReduction int
 
@@ -262,13 +262,12 @@ func memberIdentificationAttack(P []*party) {
 }
 
 func attackParties(P []*party) (attackSuccessNum int) {
-	// fmt.Println("starting attack>>>>>>>>>>>>>")
+	// Generate a leaked data block and simulate attack
 	attackSuccessNum = 0
 
 	var valid = false
 	var randomParty int
 	var randomStart int
-	// fmt.Printf("attacking at Party[%d], position[%d]\n", randomParty, randomStart)
 
 	if uniqueATD == 0 {
 		randomParty = getRandom(maxHouseholdsNumber)
@@ -291,12 +290,11 @@ func attackParties(P []*party) (attackSuccessNum int) {
 		attackSuccessNum++
 	}
 
-	// fmt.Println("ending attack#############")
 	return
 }
 
 func getRandomStart(party int) int {
-	// return an unused random start
+	// Return a unused random start for the party
 	var valid bool = false
 
 	var randomStart int
@@ -312,6 +310,7 @@ func getRandomStart(party int) int {
 }
 
 func contains(party int, randomStart int) bool {
+	// Check if the party has used the random start before
 	var contains bool = false
 
 	val, exists := usedRandomStartPartyPairs[party]
@@ -328,6 +327,7 @@ func contains(party int, randomStart int) bool {
 }
 
 func uniqueDataBlock(P []*party, arr []float64, party int, index int, input_type string) bool {
+	// Check if the data block is unique in the dataset
 	var unique bool = true
 
 	for pn, po := range P {
@@ -356,6 +356,7 @@ func uniqueDataBlock(P []*party, arr []float64, party int, index int, input_type
 }
 
 func identifyParty(P []*party, arr []float64, party int, index int) []int {
+	// Identify the party based on the arr data block
 	var matched_households = []int{}
 
 	var dataset = P[party].encryptedInput[index : index+atdSize]
@@ -421,6 +422,7 @@ func identifyParty(P []*party, arr []float64, party int, index int) []int {
 }
 
 func uniqueDataBlocks(P []*party, pos_matches [][]float64, party int, index int, min_length int) bool {
+	// Check if the data blocks is unique in the dataset
 	var unique bool = true
 
 	for pn, po := range P {
