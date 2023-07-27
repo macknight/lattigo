@@ -183,7 +183,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	for percent := 100; percent >= 80; percent -= 10 {
+	for percent := 100; percent >= 100; percent -= 10 { //TODO
 		min_percent_matched = percent
 		fmt.Println("")
 		fmt.Printf("Min Percent Matching Required = %d%%\n", min_percent_matched)
@@ -231,14 +231,15 @@ func process(fileList []string, params ckks.Parameters) {
 		transitionSum -= transitionReduction
 
 		fmt.Printf("<<<beginning---encryptedSectionNum = [%d]\n", en)
-
-		memberIdentificationAttack(P)               //under current partial encryption
-		usedRandomStartPartyPairs = map[int][]int{} //clear map for the next loop
+		if en%2 == 0 && en != encryptedSectionNum {
+			memberIdentificationAttack(P)               //under current partial encryption
+			usedRandomStartPartyPairs = map[int][]int{} //clear map for the next loop
+		}
 	}
 }
 
 func memberIdentificationAttack(P []*party) {
-	for size := 3; size <= 48; size += 3 {
+	for size := 3; size <= 48; size += 3 { //TODO:atd size
 		atdSize = size
 		var attackSuccessNum int
 		var attackCount int

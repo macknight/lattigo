@@ -127,7 +127,7 @@ func main() {
 
 	fileList := []string{}
 	var err error
-	paramsDef := ckks.PN11QP54CI // PN11QP54CI for summation correctness, PN13QP218CI for variance correctness
+	paramsDef := ckks.PN10QP27CI // PN10QP27CI, PN11QP54CI for summation correctness, PN13QP218CI for variance correctness
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
 	if err != nil {
@@ -454,8 +454,7 @@ func showHomomorphicMeasure(loop int, params ckks.Parameters) {
 
 	// fmt.Println("1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 	fmt.Printf("standardError: %.3f, %.3f\n", standardErrorSummation, standardErrorDeviation)
-	fmt.Printf("***** Evaluating Summation time for %d households in thirdparty analyst's side: %s\n", maxHouseholdsNumber, time.Duration(elapsedSummation.Nanoseconds()/int64(loop)))
-	fmt.Printf("***** Evaluating Deviation time for %d households in thirdparty analyst's side: %s\n", maxHouseholdsNumber, time.Duration(elapsedDeviation.Nanoseconds()/int64(loop)))
+	fmt.Printf("***** Evaluating Summation/Deviation time for %d households in thirdparty analyst's side: %s,%s\n", maxHouseholdsNumber, time.Duration(elapsedSummation.Nanoseconds()/int64(loop)), time.Duration(elapsedDeviation.Nanoseconds()/int64(loop)))
 
 	// fmt.Println("2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
