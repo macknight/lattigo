@@ -136,7 +136,6 @@ func main() {
 
 	// Get the current working directory
 	wd, err := os.Getwd()
-	// wd = "c:\\Users\\23304161\\source\\repos\\lattigo"
 
 	if err != nil {
 		fmt.Println("Error getting current working directory:", err)
