@@ -5,19 +5,21 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
 
-// var pathFormat = "./%s/House_10sec_1month_%d.csv"
-var rPathFormat = "C:\\Users\\23304161\\source\\Datasets\\electricity\\halfhourly_dataset\\block_%d.csv"
-
-var wFolderFormat = "C:\\Users\\23304161\\source\\Datasets\\electricity\\halfhourly_dataset_fix"
-var wPathFormat = "C:\\Users\\23304161\\source\\Datasets\\electricity\\halfhourly_dataset_fix\\block_%d.csv"
+var relativePath = filepath.Join("..", "..", "Datasets", "electricity")
+var rFolderFormat = filepath.Join("halfhourly_dataset", "block_%d.csv")
+var wFileFormat = filepath.Join("halfhourly_dataset_fix", "block_%d.csv")
+var wd string
 
 const FILE_ROWS = 10240 // element number within a section, 10240, 20000, 20480, 30720, 40960
 
 func main() {
+	var wd, _ = os.Getwd()
+	fmt.Println(wd)
 	for i := 0; i < 112; i++ {
 		genCSV(i)
 	}
@@ -39,9 +41,9 @@ func ReadCSV(path string) []string {
 
 //trim csv
 func genCSV(id int) {
-
-	path := fmt.Sprintf(rPathFormat, id)
-	lines := ReadCSV(path)
+	rFolderPath := fmt.Sprintf(rFolderFormat, id)
+	rFolderFullPath := filepath.Join(wd, relativePath, rFolderPath)
+	lines := ReadCSV(rFolderFullPath)
 
 	newLines := [][]string{}
 	previousLine := ""
@@ -87,11 +89,12 @@ func genCSV(id int) {
 	}
 
 	//create folder
-	_, err := os.Stat(wFolderFormat)
+	wFolderFullPath := filepath.Join(wd, relativePath, "halfhourly_dataset_fix")
+	_, err := os.Stat(wFolderFullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			//create folder if not existed
-			err = os.Mkdir(wFolderFormat, 0755)
+			err = os.Mkdir(wFolderFullPath, 0755)
 			if err != nil {
 				log.Fatal("Error creating folder:", err)
 			}
@@ -99,9 +102,10 @@ func genCSV(id int) {
 	}
 
 	//write files
-
 	//create csv file
-	newFile, err := os.Create(fmt.Sprintf(wPathFormat, id))
+	wFilePath := fmt.Sprintf(wFileFormat, id)
+	wFileFullPath := filepath.Join(wd, relativePath, wFilePath)
+	newFile, err := os.Create(wFileFullPath)
 	if err != nil {
 		log.Fatal("Error creating file:")
 	}

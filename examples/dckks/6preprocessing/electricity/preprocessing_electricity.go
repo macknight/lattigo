@@ -5,18 +5,21 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
-// var pathFormat = "./%s/House_10sec_1month_%d.csv"
-var rPathFormat = "C:\\Users\\23304161\\source\\Datasets\\electricity\\london\\halfhourly_dataset\\halfhourly_dataset\\block_%d.csv"
-
-var wFolderFormat = "C:\\Users\\23304161\\source\\Datasets\\electricity\\london\\halfhourly_dataset\\households_%d"
-var wPathFormat = "C:\\Users\\23304161\\source\\Datasets\\electricity\\london\\halfhourly_dataset\\households_%d\\%s.csv"
+var relativePath = filepath.Join("..", "..", "Datasets", "electricity", "london", "halfhourly_dataset")
+var wd string
+var rFolderFormat = filepath.Join("halfhourly_dataset", "block_%d.csv")
+var wFolderFormat = "households_%d"
+var wFileFormat = filepath.Join("households_%d", "%s.csv")
 
 const FILE_ROWS = 40960 // element number within a section, 10240, 20000, 20480, 30720, 40960
 
 func main() {
+	var wd, _ = os.Getwd()
+	fmt.Println(wd)
 	for i := 0; i < 112; i++ {
 		genCSV(i)
 	}
@@ -38,9 +41,9 @@ func ReadCSV(path string) []string {
 
 //trim csv
 func genCSV(id int) {
-
-	path := fmt.Sprintf(rPathFormat, id)
-	lines := ReadCSV(path)
+	rFolderPath := fmt.Sprintf(rFolderFormat, id)
+	rFolderFullPath := filepath.Join(wd, relativePath, rFolderPath)
+	lines := ReadCSV(rFolderFullPath)
 	myMap := make(map[string][][]string)
 
 	var file string
@@ -58,12 +61,13 @@ func genCSV(id int) {
 	}
 
 	//create folder
-	folderFullName := fmt.Sprintf(wFolderFormat, FILE_ROWS)
-	_, err := os.Stat(folderFullName)
+	wFolderPath := fmt.Sprintf(wFolderFormat, FILE_ROWS)
+	wFolderFullPath := filepath.Join(wd, relativePath, wFolderPath)
+	_, err := os.Stat(wFolderFullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			//create folder if not existed
-			err = os.Mkdir(folderFullName, 0755)
+			err = os.Mkdir(wFolderFullPath, 0755)
 			if err != nil {
 				log.Fatal("Error creating folder:", err)
 			}
@@ -77,7 +81,9 @@ func genCSV(id int) {
 			continue
 		}
 		//create csv file
-		newFile, err := os.Create(fmt.Sprintf(wPathFormat, FILE_ROWS, key))
+		wFilePath := fmt.Sprintf(wFileFormat, FILE_ROWS, key)
+		wFileFullpath := filepath.Join(wd, relativePath, wFilePath)
+		newFile, err := os.Create(wFileFullpath)
 		if err != nil {
 			log.Fatal("Error creating file:")
 		}

@@ -68,12 +68,6 @@ type task struct {
 	elapsedtask time.Duration
 }
 
-// mac/Linux
-var pathFormat = "../../datasets/%s/households_%d"
-
-// windows
-// const pathFormat = "examples\\datasets\\%s\\households_%d"
-
 const MAX_PARTY_ROWS = 10240 //241920
 const sectionSize = 1024     // element number within a section
 const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
@@ -158,6 +152,7 @@ func main() {
 		return
 	}
 
+	var pathFormat = filepath.Join("examples", "datasets", "%s", "households_%d")
 	var path string
 	if currentDataset == DATASET_WATER {
 		path = fmt.Sprintf(pathFormat, "water", MAX_PARTY_ROWS)

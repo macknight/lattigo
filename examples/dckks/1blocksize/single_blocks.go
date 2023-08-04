@@ -85,12 +85,6 @@ type task struct {
 	elapsedtask time.Duration
 }
 
-//mac/Linux
-// var pathFormat = "./%s/House_10sec_1month_%d.csv"
-
-//windows
-const pathFormat = "examples\\datasets\\%s\\households_blocks"
-
 const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
 const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
 const STRATEGY_RANDOM = 3
@@ -123,6 +117,7 @@ func main() {
 		return
 	}
 
+	var pathFormat = filepath.Join("examples", "datasets", "%s", "households_%d")
 	var path string
 	if currentDataset == DATASET_WATER {
 		path = fmt.Sprintf(pathFormat, "water")

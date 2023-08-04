@@ -5,19 +5,21 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
-// var pathFormat = "./%s/House_10sec_1month_%d.csv"
-var rPathFormat = "C:\\Users\\23304161\\source\\Datasets\\water\\swm_trialA_1K\\swm_trialA_%dK.csv"
-
-var wFolderFormat = "C:\\Users\\23304161\\source\\Datasets\\water\\swm_trialA_1K\\households_%d"
-
-var wPathFormat = "C:\\Users\\23304161\\source\\Datasets\\water\\swm_trialA_1K\\households_%d\\%s.csv"
+var relativePath = filepath.Join("..", "..", "Datasets", "water", "swm_trialA_1K")
+var rFolderFormat = "swm_trialA_%dK.csv"
+var wFolderFormat = "households_%d"
+var wFileFormat = filepath.Join("households_%d", "%s.csv")
+var wd string
 
 const FILE_ROWS = 40960 // element number within a section
 
 func main() {
+	var wd, _ = os.Getwd()
+	fmt.Println(wd)
 	genCSV(1)
 }
 
@@ -36,9 +38,9 @@ func ReadCSV(path string) []string {
 
 //trim csv
 func genCSV(id int) {
-
-	path := fmt.Sprintf(rPathFormat, id)
-	lines := ReadCSV(path)
+	rFolderPath := fmt.Sprintf(rFolderFormat, id)
+	rFolderFullPath := filepath.Join(wd, relativePath, rFolderPath)
+	lines := ReadCSV(rFolderFullPath)
 	myMap := make(map[string][][]string)
 
 	var file string
@@ -55,12 +57,13 @@ func genCSV(id int) {
 	}
 
 	//create folder
-	folderFullName := fmt.Sprintf(wFolderFormat, FILE_ROWS)
-	_, err := os.Stat(folderFullName)
+	wFolderPath := fmt.Sprintf(wFolderFormat, FILE_ROWS)
+	wFolderFullPath := filepath.Join(wd, relativePath, wFolderPath)
+	_, err := os.Stat(wFolderFullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			//create folder if not existed
-			err = os.Mkdir(folderFullName, 0755)
+			err = os.Mkdir(wFolderFullPath, 0755)
 			if err != nil {
 				log.Fatal("Error creating folder:", err)
 			}
@@ -74,7 +77,9 @@ func genCSV(id int) {
 			continue
 		}
 		//create csv file
-		newFile, err := os.Create(fmt.Sprintf(wPathFormat, FILE_ROWS, key))
+		wFilePath := fmt.Sprintf(wFileFormat, FILE_ROWS, key)
+		wFileFullPath := filepath.Join(wd, relativePath, wFilePath)
+		newFile, err := os.Create(wFileFullPath)
 		if err != nil {
 			log.Fatal("Error creating file:")
 		}
