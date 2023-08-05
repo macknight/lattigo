@@ -81,7 +81,9 @@ const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 var atdSize = 24 // element number of unique attacker data
 var min_percent_matched = 100
 var max_attackLoop = 2000
+
 var maxHouseholdsNumber = 80
+
 var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
@@ -106,7 +108,7 @@ func main() {
 		}
 		args = append(args, num)
 	}
-
+	args = []int{1, 1, 0}
 	currentStrategy = args[0]
 	currentDataset = args[1]
 	uniqueATD = args[2]
@@ -153,8 +155,13 @@ func main() {
 		fmt.Println("Error getting current working directory:", err)
 		return
 	}
-	var pathFormat = filepath.Join("examples", "datasets", "%s", "households_%d")
+	var pathFormat string
 	var path string
+	if strings.Contains(wd, "examples") {
+		pathFormat = filepath.Join("..", "..", "..", "examples", "datasets", "%s", "households_%d")
+	} else {
+		pathFormat = filepath.Join("examples", "datasets", "%s", "households_%d")
+	}
 	if currentDataset == DATASET_WATER {
 		path = fmt.Sprintf(pathFormat, "water", MAX_PARTY_ROWS)
 		transitionEqualityThreshold = WATER_TRANSITION_EQUALITY_THRESHOLD
@@ -185,33 +192,33 @@ func main() {
 	}
 	fmt.Printf("fileList:%d\n", len(fileList))
 
-	for percent := 100; percent >= 100; percent -= 10 {
+	for percent := 100; percent >= 100; percent -= 10 { //TODO matching proportion
 		min_percent_matched = percent
 		fmt.Println("Households, ASR, Standard Error")
-		for num := 5; num <= 80; num += 5 {
+		for selectedNum := 5; selectedNum <= 80; selectedNum += 5 {
+			maxHouseholdsNumber = selectedNum
 			var standard_error = 0.0
 			var std = 0.0
 			var mean = 0.0
 			house_sample = []float64{}
 			for loop_count := 0; loop_count < max_attackLoop; loop_count++ {
-				maxHouseholdsNumber = num
+				var randomFileList []string
 				if maxHouseholdsNumber == 80 {
-					process(fileList, params)
+					randomFileList = fileList
 				} else {
-					// randomly select maxHouseholdsNumber houses
-					usedHouses = map[int]int{}
-					randomHouses := []string{}
+					tmpHouseIDs := make([]int, maxHouseholdsNumber)
 					for i := 0; i < maxHouseholdsNumber; i++ {
-						var randomHouse = getRandom(80)
-						if _, exists := usedHouses[randomHouse]; !exists {
-							usedHouses[randomHouse] = 1
-							randomHouses = append(randomHouses, fileList[randomHouse])
-						} else {
-							i--
-						}
+						tmpHouseIDs[i] = i
 					}
-					process(randomHouses, params)
+
+					randomFileList = []string{}
+					for index := 0; index < maxHouseholdsNumber; index++ {
+						r := getRandom(maxHouseholdsNumber - index)
+						randomFileList = append(randomFileList, fileList[tmpHouseIDs[r]])
+						tmpHouseIDs[r] = tmpHouseIDs[maxHouseholdsNumber-1-index]
+					}
 				}
+				process(randomFileList, params)
 				std, mean = calculateStandardDeviation(house_sample)
 				standard_error = std / math.Sqrt(float64(len(house_sample)))
 				if standard_error <= 0.01 && loop_count >= 100 {
@@ -219,7 +226,6 @@ func main() {
 					break
 				}
 			}
-
 			fmt.Printf("Number of households: %d, mean ASR: %.3f, standard error: %.3f\n", maxHouseholdsNumber, mean, standard_error)
 		}
 	}
@@ -253,7 +259,7 @@ func process(fileList []string, params ckks.Parameters) {
 	}
 }
 
-func memberIdentificationAttack(P []*party) {
+func memberIdentificationAttack(P []*party) { //TODO:atd size
 	var attackSuccessNum int
 	var attackCount int
 	var sample = []float64{}

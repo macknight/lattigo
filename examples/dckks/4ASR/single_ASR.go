@@ -151,9 +151,14 @@ func main() {
 		fmt.Println("Error getting current working directory:", err)
 		return
 	}
-
-	var pathFormat = filepath.Join("examples", "datasets", "%s", "households_%d")
+	var pathFormat string
 	var path string
+
+	if strings.Contains(wd, "examples") {
+		pathFormat = filepath.Join("..", "..", "..", "examples", "datasets", "%s", "households_%d")
+	} else {
+		pathFormat = filepath.Join("examples", "datasets", "%s", "households_%d")
+	}
 	if currentDataset == DATASET_WATER {
 		path = fmt.Sprintf(pathFormat, "water", MAX_PARTY_ROWS)
 		transitionEqualityThreshold = WATER_TRANSITION_EQUALITY_THRESHOLD
@@ -178,29 +183,31 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	for percent := 100; percent >= 100; percent -= 10 { //TODO
+	for percent := 100; percent >= 100; percent -= 10 { //TODO matching proportion
 		min_percent_matched = percent
 		fmt.Println("")
 		fmt.Printf("Min Percent Matching Required = %d%%\n", min_percent_matched)
 		fmt.Println("====================================================================")
 		fmt.Println("")
+		var randomFileList []string
+
 		if maxHouseholdsNumber == 80 {
-			process(fileList, params)
+			randomFileList = fileList
 		} else {
 			// randomly select maxHouseholdsNumber households
-			usedHouses = map[int]int{}
-			randomHouses := []string{}
+			tmpHouseIDs := make([]int, maxHouseholdsNumber)
 			for i := 0; i < maxHouseholdsNumber; i++ {
-				var randomHouse = getRandom(80)
-				if _, exists := usedHouses[randomHouse]; !exists {
-					usedHouses[randomHouse] = 1
-					randomHouses = append(randomHouses, fileList[randomHouse])
-				} else {
-					i--
-				}
+				tmpHouseIDs[i] = i
 			}
-			process(randomHouses, params)
+
+			randomFileList = []string{}
+			for index := 0; index < maxHouseholdsNumber; index++ {
+				r := getRandom(maxHouseholdsNumber - index)
+				randomFileList = append(randomFileList, fileList[tmpHouseIDs[r]])
+				tmpHouseIDs[r] = tmpHouseIDs[maxHouseholdsNumber-1-index]
+			}
 		}
+		process(randomFileList, params)
 	}
 	fmt.Printf("Main() Done in %s \n", time.Since(start))
 }
