@@ -117,7 +117,12 @@ func main() {
 		return
 	}
 
-	var pathFormat = filepath.Join("examples", "datasets", "%s", "households_%d")
+	var pathFormat string
+	if strings.Contains(wd, "examples") {
+		pathFormat = filepath.Join("..", "..", "..", "examples", "datasets", "%s", "households_%d")
+	} else {
+		pathFormat = filepath.Join("examples", "datasets", "%s", "households_%d")
+	}
 	var path string
 	if currentDataset == DATASET_WATER {
 		path = fmt.Sprintf(pathFormat, "water")
