@@ -110,7 +110,7 @@ const sectionSize = 1024     //block size, 2048 for summation correctness, 8192 
 
 var currentDataset = 1  //water(1),electricity(2)
 var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
-var currentTarget = 2   //entropy(1),transition(2)
+var currentTarget = 1   //entropy(1),transition(2)
 
 var transitionEqualityThreshold int
 var sectionNum int
@@ -127,9 +127,11 @@ func main() {
 		args = append(args, num)
 	}
 
-	currentStrategy = args[0]
-	currentDataset = args[1]
-	currentTarget = args[2]
+	if len(args) > 0 {
+		currentStrategy = args[0]
+		currentDataset = args[1]
+		currentTarget = args[2]
+	}
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
