@@ -85,11 +85,13 @@ type task struct {
 	elapsedtask time.Duration
 }
 
-const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
-const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
+const STRATEGY_GLOBAL = 1
+const STRATEGY_HOUSEHOLD = 2
 const STRATEGY_RANDOM = 3
+
 const DATASET_WATER = 1
 const DATASET_ELECTRICITY = 2
+
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
@@ -184,9 +186,9 @@ func process(fileList []string, params ckks.Parameters) {
 	var entropyReduction float64
 	var transitionReduction int
 	for en := 0; en < encryptedSectionNum; en++ {
-		if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
+		if currentStrategy == STRATEGY_GLOBAL {
 			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByGlobalEntropyHightoLow(en, P, entropySum, transitionSum)
-		} else if currentStrategy == STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW {
+		} else if currentStrategy == STRATEGY_HOUSEHOLD {
 			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByHouseholdEntropyHightoLow(en, P, entropySum, transitionSum)
 		} else { //STRATEGY_RANDOM
 			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByRandom(en, P, entropySum, transitionSum)

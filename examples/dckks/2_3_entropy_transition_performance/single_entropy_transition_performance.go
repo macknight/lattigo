@@ -90,11 +90,13 @@ type task struct {
 	elapsedtask time.Duration
 }
 
-const STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW = 1
-const STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW = 2
+const STRATEGY_GLOBAL = 1
+const STRATEGY_HOUSEHOLD = 2
 const STRATEGY_RANDOM = 3
+
 const DATASET_WATER = 1
 const DATASET_ELECTRICITY = 2
+
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
@@ -110,7 +112,7 @@ const sectionSize = 1024     //block size, 2048 for summation correctness, 8192 
 
 var currentDataset = 1  //water(1),electricity(2)
 var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
-var currentTarget = 1   //entropy(1),transition(2)
+var currentTarget = 2   //entropy(1),transition(2)
 
 var transitionEqualityThreshold int
 var sectionNum int
@@ -134,9 +136,9 @@ func main() {
 	}
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
+	if currentStrategy == STRATEGY_GLOBAL {
 		fmt.Println("Strategy: Global Entropy High To Low")
-	} else if currentStrategy == STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW {
+	} else if currentStrategy == STRATEGY_HOUSEHOLD {
 		fmt.Println("Strategy: Household Entropy High To Low")
 	} else {
 		fmt.Println("Strategy: Random")
@@ -239,10 +241,10 @@ func process(fileList []string, params ckks.Parameters) {
 	for en := 0; en < encryptedSectionNum; en++ {
 		// fmt.Printf("------------------------------------------encryptedSectionNum = %d\n", en)
 
-		if currentStrategy == STRATEGY_GLOBAL_ENTROPY_HIGH_TO_LOW {
-			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByGlobalEntropyHightoLow(en, P, entropySum, transitionSum)
-		} else if currentStrategy == STRATEGY_HOUSEHOLD_ENTROPY_HIGH_TO_LOW {
-			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByHouseholdEntropyHightoLow(en, P, entropySum, transitionSum)
+		if currentStrategy == STRATEGY_GLOBAL {
+			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByGlobal(en, P, entropySum, transitionSum)
+		} else if currentStrategy == STRATEGY_HOUSEHOLD {
+			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByHousehold(en, P, entropySum, transitionSum)
 		} else { //STRATEGY_RANDOM
 			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByRandom(en, P, entropySum, transitionSum)
 		}
@@ -400,7 +402,7 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum, transitionSum
 	return
 }
 
-func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySum, transitionSum float64) (plainSum []float64, entropyReduction float64, transitionReduction float64) {
+func markEncryptedSectionsByGlobal(en int, P []*party, entropySum, transitionSum float64) (plainSum []float64, entropyReduction float64, transitionReduction float64) {
 
 	entropyReduction = 0.0
 	transitionReduction = 0
@@ -454,7 +456,7 @@ func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySu
 	return
 }
 
-func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entropySum, transitionSum float64) (plainSum []float64, entropyReduction float64, transitionReduction float64) {
+func markEncryptedSectionsByHousehold(en int, P []*party, entropySum, transitionSum float64) (plainSum []float64, entropyReduction float64, transitionReduction float64) {
 	entropyReduction = 0.0
 	transitionReduction = 0
 	plainSum = make([]float64, len(P))
