@@ -86,10 +86,10 @@ var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
 var performanceLoops = 1
-var uniqueATD int = 1 // unique attacker data, 1 for true, 0 for false
 
-var currentDataset int = 1  //water(1),electricity(2)
 var currentStrategy int = 1 //Global(1), Household(2), Random(3)
+var currentDataset int = 1  //water(1),electricity(2)
+var uniqueATD int = 1       // unique attacker data, 1 for true, 0 for false
 var currentTarget = 2       //entropy(1),transition(2)
 
 var transitionEqualityThreshold int
