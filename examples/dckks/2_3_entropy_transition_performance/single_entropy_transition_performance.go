@@ -111,7 +111,7 @@ const MAX_PARTY_ROWS = 10240 // total reocrds per household
 const sectionSize = 1024     //block size, 2048 for summation correctness, 8192 for variance correctness
 
 var currentDataset = 1  //water(1),electricity(2)
-var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
+var currentStrategy = 1 //Global(1), Household(2), Random(3)
 var currentTarget = 2   //entropy(1),transition(2)
 
 var transitionEqualityThreshold int
@@ -407,8 +407,8 @@ func markEncryptedSectionsByGlobal(en int, P []*party, entropySum, transitionSum
 	entropyReduction = 0.0
 	transitionReduction = 0
 	plainSum = make([]float64, len(P))
-
 	var targetArr []float64
+
 	for k := 0; k < len(P); k++ {
 		max := -1.0
 		sIndex := -1
@@ -460,8 +460,8 @@ func markEncryptedSectionsByHousehold(en int, P []*party, entropySum, transition
 	entropyReduction = 0.0
 	transitionReduction = 0
 	plainSum = make([]float64, len(P))
-
 	var targetArr []float64
+
 	for _, po := range P {
 		index := 0
 		max := -1.0
@@ -890,6 +890,7 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 			}
 		}
 	}
+
 	//max,min based on currentTarget
 	for _, po := range P {
 		var targetArr []float64

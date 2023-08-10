@@ -103,7 +103,7 @@ var encryptedSectionNum int
 var globalPartyRows = -1
 var performanceLoops = 1
 var currentDataset = 1  //water(1),electricity(2)
-var currentStrategy = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
+var currentStrategy = 1 //Global(1), Household(2), Random(3)
 var transitionEqualityThreshold int
 var sectionNum int
 var paramsDefs = []ckks.ParametersLiteral{ckks.PN10QP27CI, ckks.PN11QP54CI, ckks.PN12QP109CI, ckks.PN13QP218CI, ckks.PN14QP438CI, ckks.PN15QP880CI} //, ckks.PN16QP1761CI
@@ -187,9 +187,9 @@ func process(fileList []string, params ckks.Parameters) {
 	var transitionReduction int
 	for en := 0; en < encryptedSectionNum; en++ {
 		if currentStrategy == STRATEGY_GLOBAL {
-			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByGlobalEntropyHightoLow(en, P, entropySum, transitionSum)
+			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByGlobal(en, P, entropySum, transitionSum)
 		} else if currentStrategy == STRATEGY_HOUSEHOLD {
-			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByHouseholdEntropyHightoLow(en, P, entropySum, transitionSum)
+			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByHousehold(en, P, entropySum, transitionSum)
 		} else { //STRATEGY_RANDOM
 			plainSum, entropyReduction, transitionReduction = markEncryptedSectionsByRandom(en, P, entropySum, transitionSum)
 		}
@@ -253,7 +253,7 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 	return
 }
 
-func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
+func markEncryptedSectionsByGlobal(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
 
 	entropyReduction = 0.0
 	transitionReduction = 0
@@ -301,7 +301,7 @@ func markEncryptedSectionsByGlobalEntropyHightoLow(en int, P []*party, entropySu
 	return
 }
 
-func markEncryptedSectionsByHouseholdEntropyHightoLow(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
+func markEncryptedSectionsByHousehold(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
 	entropyReduction = 0.0
 	transitionReduction = 0
 	plainSum = make([]float64, len(P))

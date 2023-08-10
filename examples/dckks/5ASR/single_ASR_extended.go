@@ -57,7 +57,7 @@ type party struct {
 	flag           []int
 	group          []int
 	entropy        []float64 //entropy for block
-	transition     []int
+	transition     []float64
 }
 
 type task struct {
@@ -88,9 +88,12 @@ var NGoRoutine int = 1 // Default number of Go routines
 var encryptedSectionNum int
 var globalPartyRows = -1
 var performanceLoops = 1
-var uniqueATD int = 0       // unique attacker data, 1 for true, 0 for false
+var uniqueATD int = 0 // unique attacker data, 1 for true, 0 for false
+
 var currentDataset int = 1  //water(1),electricity(2)
-var currentStrategy int = 1 //GlobalEntropyHightoLow(1), HouseholdEntropyHightoLow(2), Random(3)
+var currentStrategy int = 1 //Global(1), Household(2), Random(3)
+var currentTarget = 2       //entropy(1),transition(2)
+
 var transitionEqualityThreshold int
 var sectionNum int
 var usedRandomStartPartyPairs = map[int][]int{}
@@ -108,10 +111,13 @@ func main() {
 		}
 		args = append(args, num)
 	}
-	args = []int{1, 1, 0}
-	currentStrategy = args[0]
-	currentDataset = args[1]
-	uniqueATD = args[2]
+
+	if len(args) > 0 {
+		currentStrategy = args[0]
+		currentDataset = args[1]
+		uniqueATD = args[2]
+		currentTarget = args[3]
+	}
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	if currentStrategy == STRATEGY_GLOBAL {
@@ -131,6 +137,12 @@ func main() {
 	} else {
 		fmt.Println("Unique Attacker Block: True")
 	}
+	if currentTarget == 1 {
+		fmt.Println("Target: Entropy based")
+	} else {
+		fmt.Println("Target: Transition based")
+	}
+
 	fmt.Println("SE threshold ", 0.01)
 	fmt.Println("Max Attack Loop: ", max_attackLoop)
 	fmt.Println("ATD Size: ", atdSize)
@@ -239,7 +251,7 @@ func process(fileList []string, params ckks.Parameters) {
 	encryptedSectionNum = sectionNum
 
 	var entropyReduction float64
-	var transitionReduction int
+	var transitionReduction float64
 
 	for en := 0; en <= encryptedSectionNum; en++ {
 		if currentStrategy == STRATEGY_GLOBAL {
@@ -463,7 +475,7 @@ func uniqueDataBlocks(P []*party, pos_matches [][]float64, party int, index int,
 	return unique
 }
 
-func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
+func markEncryptedSectionsByRandom(en int, P []*party, entropySum, transitionSum float64) (plainSum []float64, entropyReduction, transitionReduction float64) {
 	entropyReduction = 0.0
 
 	transitionReduction = 0
@@ -512,11 +524,12 @@ func markEncryptedSectionsByRandom(en int, P []*party, entropySum float64, trans
 	return
 }
 
-func markEncryptedSectionsByGlobal(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
+func markEncryptedSectionsByGlobal(en int, P []*party, entropySum, transitionSum float64) (plainSum []float64, entropyReduction, transitionReduction float64) {
 
 	entropyReduction = 0.0
 	transitionReduction = 0
 	plainSum = make([]float64, len(P))
+	var targetArr []float64
 
 	if en != 0 {
 		for k := 0; k < len(P); k++ {
@@ -524,9 +537,14 @@ func markEncryptedSectionsByGlobal(en int, P []*party, entropySum float64, trans
 			sIndex := -1
 			pIndex := -1
 			for pi, po := range P {
+				if currentTarget == 1 {
+					targetArr = po.entropy
+				} else {
+					targetArr = po.transition
+				}
 				for si := 0; si < sectionNum; si++ {
-					if po.flag[si] != 1 && po.entropy[si] > max {
-						max = po.entropy[si]
+					if po.flag[si] != 1 && targetArr[si] > max {
+						max = targetArr[si]
 						sIndex = si
 						pIndex = pi
 					}
@@ -563,18 +581,24 @@ func markEncryptedSectionsByGlobal(en int, P []*party, entropySum float64, trans
 	return
 }
 
-func markEncryptedSectionsByHousehold(en int, P []*party, entropySum float64, transitionSum int) (plainSum []float64, entropyReduction float64, transitionReduction int) {
+func markEncryptedSectionsByHousehold(en int, P []*party, entropySum, transitionSum float64) (plainSum []float64, entropyReduction, transitionReduction float64) {
 	entropyReduction = 0.0
 	transitionReduction = 0
 	plainSum = make([]float64, len(P))
+	var targetArr []float64
 
 	if en != 0 {
 		for _, po := range P {
 			index := 0
 			max := -1.0
+			if currentTarget == 1 {
+				targetArr = po.entropy
+			} else {
+				targetArr = po.transition
+			}
 			for j := 0; j < sectionNum; j++ {
-				if po.flag[j] != 1 && po.entropy[j] > max {
-					max = po.entropy[j]
+				if po.flag[j] != 1 && targetArr[j] > max {
+					max = targetArr[j]
 					index = j
 				}
 			}
@@ -657,11 +681,11 @@ func getRandom(numberRange int) (randNumber int) {
 }
 
 // generate inputs of parties
-func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, minEntropy, maxEntropy, entropySum float64, transitionSum int) {
+func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, min, max, entropySum, transitionSum float64) {
 
 	sectionNum = 0
-	minEntropy = math.MaxFloat64
-	maxEntropy = float64(-1)
+	min = math.MaxFloat64
+	max = float64(-1)
 	frequencyMap := map[float64]int{}
 	entropyMap := map[float64]float64{}
 
@@ -693,7 +717,7 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 
 		po.flag = make([]int, sectionNum)
 		po.entropy = make([]float64, sectionNum)
-		po.transition = make([]int, sectionNum)
+		po.transition = make([]float64, sectionNum)
 		po.group = make([]int, sectionSize)
 
 		for i := range po.rawInput {
@@ -724,7 +748,7 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 		entropyMap[k] = -possibility * math.Log2(possibility)
 	}
 
-	//maxEntropy,minEntropy
+	//max,min based on currentTarget
 	for _, po := range P {
 		for i := range po.rawInput {
 			singleRecordEntropy := entropyMap[po.rawInput[i]] / float64(frequencyMap[po.rawInput[i]])
@@ -738,12 +762,18 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 	}
 
 	for _, po := range P {
-		for sIndex := range po.entropy {
-			if po.entropy[sIndex] > maxEntropy {
-				maxEntropy = po.entropy[sIndex]
+		var targetArr []float64
+		if currentTarget == 1 {
+			targetArr = po.entropy
+		} else {
+			targetArr = po.transition
+		}
+		for sIndex := range targetArr {
+			if targetArr[sIndex] > max {
+				max = targetArr[sIndex]
 			}
-			if po.entropy[sIndex] < minEntropy {
-				minEntropy = po.entropy[sIndex]
+			if targetArr[sIndex] < min {
+				min = targetArr[sIndex]
 			}
 		}
 	}
