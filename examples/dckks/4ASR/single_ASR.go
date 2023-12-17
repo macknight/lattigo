@@ -110,10 +110,10 @@ func main() {
 	}
 
 	if len(args) > 0 {
-		currentStrategy = args[0]
-		currentDataset = args[1]
-		uniqueATD = args[2]
-		currentTarget = args[3]
+		currentStrategy = args[0] //Global(1), Household(2), Random(3)
+		currentDataset = args[1]  //water(1),electricity(2)
+		uniqueATD = args[2]       // unique attacker data, 1 for true, 0 for false
+		currentTarget = args[3]   //entropy(1),transition(2)
 	}
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
