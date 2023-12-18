@@ -97,6 +97,8 @@ var currentDataset int = 1  //water(1),electricity(2)
 var uniqueATD int = 0       // unique attacker data, 1 for true, 0 for false
 var currentTarget = 2       //entropy(1),transition(2)
 
+var encryptionRatio = 20 //20%
+
 var transitionEqualityThreshold int
 var sectionNum int
 var usedRandomStartPartyPairs = map[int][]int{}
@@ -121,6 +123,7 @@ func main() {
 		currentDataset = args[1]
 		uniqueATD = args[2]
 		currentTarget = args[3]
+		encryptionRatio = args[4]
 	}
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -264,7 +267,7 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 	markedSecondSection := -1
 	markedNumbers := 0
 
-	thresholdNumber := len(P) * globalPartyRows / 5 // 20% encryption
+	thresholdNumber := len(P) * globalPartyRows * encryptionRatio / 100
 	for markedNumbers < thresholdNumber {
 		for edge_index := range edges {
 			p_index_first, s_index_first, p_index_second, s_index_second := getDetailedBlocksForEdge(edge_index, len(P), sectionNum)
@@ -321,12 +324,12 @@ func calculateUniquenessBetweenBlocks(P []*party, p_index_first, s_index_first, 
 	firstBlockFlags := P[p_index_first].greedyFlags[s_index_first]
 	secondBlockFlags := P[p_index_second].greedyFlags[s_index_second]
 
-	// U=Uniqueness
-	// U(0,0)=0, U(0,1)=1, U(0,X)=0.999, U(X,X)=0.999
+	// P_U:possibility of uniqueness
+	// P_U(0,0)=0, P_U(0,1)=1, P_U(0,X)=0.999, P_U(X,X)=0.999, 0.999 is empirical cause most electricity values range from 0.000-0.999
 	uniquenessScore := 0.0
 	for i := 0; i < sectionSize; i++ {
 		if firstBlockFlags[i] == 1 || secondBlockFlags[i] == 1 {
-			uniquenessScore += 0.999 //empirical
+			uniquenessScore += 0.999
 		} else if firstBlock[i] != secondBlock[i] {
 			//non equal, unique
 			uniquenessScore += 1
@@ -390,32 +393,6 @@ func getDetailedBlocksForEdge(edge_index, householdNumber, sectionNumber int) (i
 	s_index_second = edge_index
 
 	return p_index_first, s_index_first, p_index_second, s_index_second
-}
-
-// main start
-func process(fileList []string, params ckks.Parameters) {
-	P := genparties(params, fileList)
-	_, _, _, _, _, entropySum, transitionSum := genInputs(P)
-	encryptedSectionNum = sectionNum
-
-	var entropyReduction float64
-	var transitionReduction float64
-
-	for en := 0; en <= encryptedSectionNum; en++ {
-		if currentStrategy == STRATEGY_GLOBAL {
-			_, entropyReduction, transitionReduction = markEncryptedSectionsByGlobal(en, P, entropySum, transitionSum)
-		} else if currentStrategy == STRATEGY_HOUSEHOLD {
-			_, entropyReduction, transitionReduction = markEncryptedSectionsByHousehold(en, P, entropySum, transitionSum)
-		} else { //STRATEGY_RANDOM
-			_, entropyReduction, transitionReduction = markEncryptedSectionsByRandom(en, P, entropySum, transitionSum)
-		}
-		entropySum -= entropyReduction
-		transitionSum -= transitionReduction
-
-		if en == 6 {
-			memberIdentificationAttack(P) //under current partial encryption
-		}
-	}
 }
 
 func memberIdentificationAttack(P []*party) { //TODO:atd size
@@ -622,165 +599,6 @@ func uniqueDataBlocks(P []*party, pos_matches [][]float64, party int, index int,
 		}
 	}
 	return unique
-}
-
-func markEncryptedSectionsByRandom(en int, P []*party, entropySum, transitionSum float64) (plainSum []float64, entropyReduction, transitionReduction float64) {
-	entropyReduction = 0.0
-
-	transitionReduction = 0
-
-	plainSum = make([]float64, len(P))
-
-	if en != 0 {
-		for _, po := range P {
-			if en == 1 {
-				for i := 0; i < len(po.flag); i++ {
-					po.flag[i] = i
-				}
-			}
-
-			r := getRandom(encryptedSectionNum - en + 1)
-			index := po.flag[r]
-			entropyReduction += po.entropy[index]
-			transitionReduction += po.transition[index]
-			po.flag[r] = po.flag[encryptedSectionNum-en]
-			po.flag[encryptedSectionNum-en] = index
-		} // mark randomly
-	}
-
-	//for each threshold, prepare plainInput&input, and encryptedInput
-
-	for pi, po := range P {
-		po.input = make([][]float64, 0)
-		po.plainInput = make([]float64, 0)
-		po.encryptedInput = make([]float64, 0)
-		k := 0
-		for j := 0; j < globalPartyRows; j++ {
-			if j%sectionSize == 0 && j/sectionSize > len(po.flag)-en-1 {
-				po.input = append(po.input, make([]float64, sectionSize))
-				k++
-			}
-			if j/sectionSize > len(po.flag)-en-1 {
-				po.input[k-1][j%sectionSize] = po.rawInput[j]
-				po.encryptedInput = append(po.encryptedInput, -0.1)
-			} else {
-				plainSum[pi] += po.rawInput[j]
-				po.plainInput = append(po.plainInput, po.rawInput[j])
-				po.encryptedInput = append(po.encryptedInput, po.rawInput[j])
-			}
-		}
-	}
-	return
-}
-
-func markEncryptedSectionsByGlobal(en int, P []*party, entropySum, transitionSum float64) (plainSum []float64, entropyReduction, transitionReduction float64) {
-
-	entropyReduction = 0.0
-	transitionReduction = 0
-	plainSum = make([]float64, len(P))
-	var targetArr []float64
-
-	if en != 0 {
-		for k := 0; k < len(P); k++ {
-			max := -1.0
-			sIndex := -1
-			pIndex := -1
-			for pi, po := range P {
-				if currentTarget == 1 {
-					targetArr = po.entropy
-				} else {
-					targetArr = po.transition
-				}
-				for si := 0; si < sectionNum; si++ {
-					if po.flag[si] != 1 && targetArr[si] > max {
-						max = targetArr[si]
-						sIndex = si
-						pIndex = pi
-					}
-				}
-			}
-			P[pIndex].flag[sIndex] = 1
-			entropyReduction += P[pIndex].entropy[sIndex]
-			transitionReduction += P[pIndex].transition[sIndex]
-		}
-	}
-
-	//for each threshold, prepare plainInput&input, and encryptedInput
-	for pi, po := range P {
-		po.input = make([][]float64, 0)
-		po.plainInput = make([]float64, 0)
-		po.encryptedInput = make([]float64, 0)
-		k := 0
-		for j := 0; j < globalPartyRows; j++ {
-			if j%sectionSize == 0 && po.flag[j/sectionSize] == 1 {
-				po.input = append(po.input, make([]float64, sectionSize))
-				k++
-			}
-
-			if po.flag[j/sectionSize] == 1 {
-				po.input[k-1][j%sectionSize] = po.rawInput[j]
-				po.encryptedInput = append(po.encryptedInput, -0.1)
-			} else {
-				plainSum[pi] += po.rawInput[j]
-				po.plainInput = append(po.plainInput, po.rawInput[j])
-				po.encryptedInput = append(po.encryptedInput, po.rawInput[j])
-			}
-		}
-	}
-	return
-}
-
-func markEncryptedSectionsByHousehold(en int, P []*party, entropySum, transitionSum float64) (plainSum []float64, entropyReduction, transitionReduction float64) {
-	entropyReduction = 0.0
-	transitionReduction = 0
-	plainSum = make([]float64, len(P))
-	var targetArr []float64
-
-	if en != 0 {
-		for _, po := range P {
-			index := 0
-			max := -1.0
-			if currentTarget == 1 {
-				targetArr = po.entropy
-			} else {
-				targetArr = po.transition
-			}
-			for j := 0; j < sectionNum; j++ {
-				if po.flag[j] != 1 && targetArr[j] > max {
-					max = targetArr[j]
-					index = j
-				}
-			}
-			po.flag[index] = 1 //po.flag has "sectionNumber" elements
-			entropyReduction += po.entropy[index]
-			transitionReduction += po.transition[index]
-		} // mark one block for each person
-	}
-
-	//for each threshold, prepare plainInput&input, and encryptedInput
-	for pi, po := range P {
-		po.input = make([][]float64, 0)
-		po.plainInput = make([]float64, 0)
-		po.encryptedInput = make([]float64, 0)
-
-		k := 0
-		for j := 0; j < globalPartyRows; j++ {
-			if j%sectionSize == 0 && po.flag[j/sectionSize] == 1 {
-				po.input = append(po.input, make([]float64, sectionSize))
-				k++
-			}
-
-			if po.flag[j/sectionSize] == 1 {
-				po.input[k-1][j%sectionSize] = po.rawInput[j]
-				po.encryptedInput = append(po.encryptedInput, -0.1)
-			} else {
-				plainSum[pi] += po.rawInput[j]
-				po.plainInput = append(po.plainInput, po.rawInput[j])
-				po.encryptedInput = append(po.encryptedInput, po.rawInput[j])
-			}
-		}
-	}
-	return
 }
 
 func genparties(params ckks.Parameters, fileList []string) []*party {
