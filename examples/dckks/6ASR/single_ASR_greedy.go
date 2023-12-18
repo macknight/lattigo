@@ -83,7 +83,7 @@ const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var atdSize = 24 // element number of unique attacker data
 var min_percent_matched = 100
-var max_attackLoop = 2000
+var max_attackLoop = 10 //2000
 
 var maxHouseholdsNumber = 80
 
@@ -214,7 +214,8 @@ func main() {
 	for percent := 100; percent >= 100; percent -= 10 { //TODO matching proportion
 		min_percent_matched = percent
 		fmt.Println("Households, ASR, Standard Error")
-		for selectedNum := 5; selectedNum <= 80; selectedNum += 5 {
+		//maxHouseholdsNumber = 80
+		for selectedNum := 3; selectedNum <= 3; selectedNum += 5 {
 			maxHouseholdsNumber = selectedNum
 			var standard_error = 0.0
 			var std = 0.0
@@ -225,17 +226,18 @@ func main() {
 				if maxHouseholdsNumber == 80 {
 					randomFileList = fileList
 				} else {
-					tmpHouseIDs := make([]int, maxHouseholdsNumber)
-					for i := 0; i < maxHouseholdsNumber; i++ {
-						tmpHouseIDs[i] = i
-					}
+					// tmpHouseIDs := make([]int, maxHouseholdsNumber)
+					// for i := 0; i < maxHouseholdsNumber; i++ {
+					// 	tmpHouseIDs[i] = i
+					// }
 
-					randomFileList = []string{}
-					for index := 0; index < maxHouseholdsNumber; index++ {
-						r := getRandom(maxHouseholdsNumber - index)
-						randomFileList = append(randomFileList, fileList[tmpHouseIDs[r]])
-						tmpHouseIDs[r] = tmpHouseIDs[maxHouseholdsNumber-1-index]
-					}
+					// randomFileList = []string{}
+					// for index := 0; index < maxHouseholdsNumber; index++ {
+					// 	r := getRandom(maxHouseholdsNumber - index)
+					// 	randomFileList = append(randomFileList, fileList[tmpHouseIDs[r]])
+					// 	tmpHouseIDs[r] = tmpHouseIDs[maxHouseholdsNumber-1-index]
+					// }
+					randomFileList = fileList[:selectedNum]
 				}
 				processGreedy(randomFileList, params)
 				std, mean = calculateStandardDeviation(house_sample)
@@ -256,7 +258,6 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 	P := genparties(params, fileList)
 	genInputs(P)
 	intializeEdgeRelated(P)
-
 	edgeSize := len(P) * (len(P) - 1) * sectionNum * sectionNum / 2
 	edges := make([]float64, edgeSize)
 
@@ -268,10 +269,21 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 	markedNumbers := 0
 
 	thresholdNumber := len(P) * globalPartyRows * encryptionRatio / 100
+	fmt.Println("len(P) ", len(P))
+	fmt.Println("globalPartyRows ", globalPartyRows)
+	fmt.Println("encryptionRatio ", encryptionRatio)
+	fmt.Println("thresholdNumber ", thresholdNumber)
+
 	for markedNumbers < thresholdNumber {
 		for edge_index := range edges {
 			p_index_first, s_index_first, p_index_second, s_index_second := getDetailedBlocksForEdge(edge_index, len(P), sectionNum)
+			// fmt.Println("p_index_first ", p_index_first)
+			// fmt.Println("s_index_first ", s_index_first)
+			// fmt.Println("p_index_second ", p_index_second)
+			// fmt.Println("s_index_second ", s_index_second)
+
 			edges[edge_index] = calculateUniquenessBetweenBlocks(P, p_index_first, s_index_first, p_index_second, s_index_second)
+
 			if edges[edge_index] > maxUniquenessScore {
 				maxUniquenessScore = edges[edge_index]
 				markedFirstHousehold = p_index_first
@@ -280,8 +292,13 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 				markedSecondSection = s_index_second
 			}
 		}
-
+		// fmt.Println("edges[", edge_index, "]=", edges[edge_index])
+		fmt.Println("markedFirstHousehold ", markedFirstHousehold)
+		fmt.Println("markedFirstSection ", markedFirstSection)
+		fmt.Println("markedSecondHousehold ", markedSecondHousehold)
+		fmt.Println("markedSecondSection ", markedSecondSection)
 		markedNumbers = greedyMarkBlocks(markedNumbers, P, markedFirstHousehold, markedFirstSection, markedSecondHousehold, markedSecondSection)
+		fmt.Println("markedNumbers:", markedNumbers)
 	}
 
 	greedyEncryptBlocks(P)
@@ -311,6 +328,16 @@ func greedyMarkBlocks(markedNumbers int, P []*party, markedFirstHousehold, marke
 				firstBlockFlags[i] = 1
 				secondBlockFlags[i] = 1
 				markedNumbers += 2
+			}
+		} else if firstBlockFlags[i] == 0 && secondBlockFlags[i] == 1 {
+			if firstBlock[i] != secondBlock[i] {
+				firstBlockFlags[i] = 1
+				markedNumbers += 1
+			}
+		} else if firstBlockFlags[i] == 1 && secondBlockFlags[i] == 0 {
+			if firstBlock[i] != secondBlock[i] {
+				secondBlockFlags[i] = 1
+				markedNumbers += 1
 			}
 		}
 	}
@@ -346,11 +373,12 @@ func intializeEdgeRelated(P []*party) {
 	edgeNumberArray = make([]int, len(P)) //defaults to 0
 	for i := range edgeNumberArray {
 		num := 0
-		for i = 1; i < len(P)-i; i++ {
+		for j := 1; j < len(P)-i; j++ {
 			num += sectionNum * sectionNum
 		}
 		edgeNumberArray[i] = num
 	}
+	fmt.Println("edgeNumberArray:", edgeNumberArray)
 }
 
 func getDetailedBlocksForEdge(edge_index, householdNumber, sectionNumber int) (int, int, int, int) {
@@ -369,7 +397,7 @@ func getDetailedBlocksForEdge(edge_index, householdNumber, sectionNumber int) (i
 	}
 
 	sum = 0
-	for i := 0; i < householdNumber; i++ {
+	for i := p_index_first + 1; i < householdNumber; i++ {
 		previousSum := sum
 		sum += sectionNumberSqured
 		if sum > edge_index {
