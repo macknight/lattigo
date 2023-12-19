@@ -222,9 +222,7 @@ func main() {
 
 	for percent := 100; percent >= 100; percent -= 10 { //TODO matching proportion
 		min_percent_matched = percent
-		fmt.Println("Households, ASR, Standard Error")
-		//maxHouseholdsNumber = 80
-		for selectedNum := 3; selectedNum <= 3; selectedNum += 5 {
+		for selectedNum := 80; selectedNum <= 80; selectedNum += 5 {
 			maxHouseholdsNumber = selectedNum
 			processGreedy(fileList[:selectedNum], params)
 		}
@@ -365,7 +363,7 @@ func intializeEdgeRelated(P []*party) {
 		}
 		edgeNumberArray[i] = num
 	}
-	fmt.Println("edgeNumberArray:", edgeNumberArray)
+	// fmt.Println("edgeNumberArray:", edgeNumberArray)
 }
 
 func getDetailedBlocksForEdge(edge_index, householdNumber, sectionNumber int) (int, int, int, int) {
