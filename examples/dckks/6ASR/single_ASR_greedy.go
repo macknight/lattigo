@@ -1,3 +1,8 @@
+/**
+running command:
+cd <folder of the project>
+go run .\examples\dckks\6ASR\single_ASR_greedy.go 1 2 0 1 20 3
+*/
 package main
 
 import (
@@ -81,10 +86,10 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
-var atdSize = 24 // element number of unique attacker data
+var atdSize = 3 // records number of attack data block
 var min_percent_matched = 100
-var GLOBAL_ATTACK_LOOP = 100
-var LOCAL_ATTACK_LOOP = 1000
+var GLOBAL_ATTACK_LOOP = 2000
+var LOCAL_ATTACK_LOOP = 2000
 
 var maxHouseholdsNumber = 80
 
@@ -125,6 +130,7 @@ func main() {
 		uniqueATD = args[2]
 		currentTarget = args[3]
 		encryptionRatio = args[4]
+		atdSize = args[5]
 	}
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -150,6 +156,8 @@ func main() {
 	} else {
 		fmt.Println("Target: Transition based")
 	}
+	fmt.Println("encryptionRatio:", encryptionRatio)
+	fmt.Println("atdSize:", atdSize)
 
 	fmt.Println("SE threshold ", 0.01)
 	fmt.Println("Global Attack Loop: ", GLOBAL_ATTACK_LOOP)
@@ -240,9 +248,6 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 	previousMarkedNumbers := 0
 
 	thresholdNumber := len(P) * globalPartyRows * encryptionRatio / 100
-	// fmt.Println("len(P) ", len(P))
-	// fmt.Println("globalPartyRows ", globalPartyRows)
-	// fmt.Println("encryptionRatio ", encryptionRatio)
 
 	for markedNumbers < thresholdNumber {
 		maxUniquenessScore := -1.0
@@ -261,17 +266,12 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 		}
 		// fmt.Println("edges:", edges)
 		previousMarkedNumbers = markedNumbers
-		markedNumbers = greedyMarkBlocks(markedNumbers, P, markedFirstHousehold, markedFirstSection, markedSecondHousehold, markedSecondSection)
-		// fmt.Println("markedFirstHousehold:", markedFirstHousehold)
-		// fmt.Println("markedFirstSection:", markedFirstSection)
-		// fmt.Println("markedSecondHousehold:", markedSecondHousehold)
-		// fmt.Println("markedSecondSection:", markedSecondSection)
-		// fmt.Println("previousMarkedNumbers:", previousMarkedNumbers)
-		// fmt.Println("markedNumbers:", markedNumbers)
+		markedNumbers = greedyMarkBlocks(markedNumbers, thresholdNumber, P, markedFirstHousehold, markedFirstSection, markedSecondHousehold, markedSecondSection)
 		if markedNumbers == previousMarkedNumbers {
 			break
 		}
 	}
+	fmt.Println("markedNumbers:", markedNumbers)
 	fmt.Println("thresholdNumber ", thresholdNumber)
 
 	greedyEncryptBlocks(P)
@@ -290,7 +290,7 @@ func greedyEncryptBlocks(P []*party) {
 	}
 }
 
-func greedyMarkBlocks(markedNumbers int, P []*party, markedFirstHousehold, markedFirstSection, markedSecondHousehold, markedSecondSection int) int {
+func greedyMarkBlocks(markedNumbers, thresholdNumber int, P []*party, markedFirstHousehold, markedFirstSection, markedSecondHousehold, markedSecondSection int) int {
 	firstBlock := P[markedFirstHousehold].greedyInputs[markedFirstSection]
 	secondBlock := P[markedSecondHousehold].greedyInputs[markedSecondSection]
 	firstBlockFlags := P[markedFirstHousehold].greedyFlags[markedFirstSection]
@@ -299,18 +299,31 @@ func greedyMarkBlocks(markedNumbers int, P []*party, markedFirstHousehold, marke
 		if firstBlockFlags[i] == 0 && secondBlockFlags[i] == 0 {
 			if firstBlock[i] != secondBlock[i] {
 				firstBlockFlags[i] = 1
+				markedNumbers++
+				if markedNumbers == thresholdNumber {
+					break
+				}
 				secondBlockFlags[i] = 1
-				markedNumbers += 2
+				markedNumbers++
+				if markedNumbers == thresholdNumber {
+					break
+				}
 			}
 		} else if firstBlockFlags[i] == 0 && secondBlockFlags[i] == 1 {
 			if firstBlock[i] != secondBlock[i] {
 				firstBlockFlags[i] = 1
-				markedNumbers += 1
+				markedNumbers++
+				if markedNumbers == thresholdNumber {
+					break
+				}
 			}
 		} else if firstBlockFlags[i] == 1 && secondBlockFlags[i] == 0 {
 			if firstBlock[i] != secondBlock[i] {
 				secondBlockFlags[i] = 1
-				markedNumbers += 1
+				markedNumbers++
+				if markedNumbers == thresholdNumber {
+					break
+				}
 			}
 		}
 	}
@@ -325,11 +338,12 @@ func calculateUniquenessBetweenBlocks(P []*party, p_index_first, s_index_first, 
 	secondBlockFlags := P[p_index_second].greedyFlags[s_index_second]
 
 	// P_U:possibility of uniqueness
-	// P_U(0,0)=0, P_U(0,1)=1, P_U(0,X)=0.999, P_U(X,X)=0.999, 0.999 is empirical cause most electricity values range from 0.000-0.999
+	// decoratedValues holds 2 decimal precision
+	// P_U(0,0)=0, P_U(0,1)=1, P_U(0,X)=0.9, P_U(X,X)=0.9, 0.9 is empirical cause most electricity values range from 0.0-0.9 (10 options)
 	uniquenessScore := 0.0
 	for i := 0; i < sectionSize; i++ {
 		if firstBlockFlags[i] == 1 || secondBlockFlags[i] == 1 {
-			uniquenessScore += 0.999
+			uniquenessScore += 0.9
 		} else if firstBlock[i] != secondBlock[i] {
 			//non equal, unique
 			uniquenessScore += 1
@@ -418,7 +432,7 @@ func memberIdentificationAttack(P []*party) { //TODO:atd size
 			attackLoop++
 			break
 		}
-		fmt.Printf("Attack Loop:%d\nASR: %.3f, std:%.3f, mean ASR: %.3f, standard error: %.3f\n=====\n", attackLoop, asr, std, mean, standard_error)
+		fmt.Printf("Global Attack Loop:%d\nASR: %.3f, std:%.3f, mean ASR: %.3f, standard error: %.3f\n=====\n", attackLoop, asr, std, mean, standard_error)
 	}
 
 	fmt.Printf("Attack Summary:\nNumber of households: %d, mean ASR: %.3f, standard error: %.3f\n", maxHouseholdsNumber, mean, standard_error)
@@ -706,8 +720,8 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 
 		delta := 0.0
 		for i := range po.rawInput {
-			realValue := math.Round(partyRows[i]*1000) / 1000    // hold 3 decimal places
-			decoratedValue := math.Round(partyRows[i]*100) / 100 // decrease data uniqueness
+			realValue := math.Round(partyRows[i]*1000) / 1000  // hold 3 decimal places
+			decoratedValue := math.Round(partyRows[i]*10) / 10 // decrease data uniqueness, very important, together with atdSize
 			delta += decoratedValue - realValue
 
 			po.rawInput[i] = decoratedValue
