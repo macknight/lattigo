@@ -1,7 +1,7 @@
 /**
 running command:
 cd <folder of the project>
-go run .\examples\dckks\6ASR\single_ASR_greedy.go 1 2 0 1 20 3
+go run .\examples\dckks\6ASR\single_ASR_greedy.go 1 2 0 1 20
 */
 package main
 
@@ -86,7 +86,7 @@ const DATASET_ELECTRICITY = 2
 const WATER_TRANSITION_EQUALITY_THRESHOLD = 100
 const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
-var atdSize = 3 // records number of attack data block
+var atdSize int // records number of attack data block
 var min_percent_matched = 100
 var GLOBAL_ATTACK_LOOP = 2000
 var LOCAL_ATTACK_LOOP = 2000
@@ -109,7 +109,7 @@ var transitionEqualityThreshold int
 var sectionNum int
 var usedRandomStartPartyPairs = map[int][]int{}
 var usedHouses = map[int]int{}
-var asrList = []float64{}
+var asrList []float64
 var edgeNumberArray = []int{}
 
 func main() {
@@ -130,7 +130,6 @@ func main() {
 		uniqueATD = args[2]
 		currentTarget = args[3]
 		encryptionRatio = args[4]
-		atdSize = args[5]
 	}
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -157,11 +156,9 @@ func main() {
 		fmt.Println("Target: Transition based")
 	}
 	fmt.Println("encryptionRatio:", encryptionRatio)
-	fmt.Println("atdSize:", atdSize)
 
 	fmt.Println("SE threshold ", 0.01)
 	fmt.Println("Global Attack Loop: ", GLOBAL_ATTACK_LOOP)
-	fmt.Println("ATD Size: ", atdSize)
 	fmt.Println("Number of Households: ", maxHouseholdsNumber)
 	fmt.Println("Encryption ratio: 60%")
 
@@ -220,13 +217,16 @@ func main() {
 	}
 	fmt.Printf("fileList:%d\n", len(fileList))
 
-	for percent := 100; percent >= 100; percent -= 10 { //TODO matching proportion
-		min_percent_matched = percent
-		for selectedNum := 80; selectedNum <= 80; selectedNum += 5 {
-			maxHouseholdsNumber = selectedNum
-			processGreedy(fileList[:selectedNum], params)
+	for atdSize = 3; atdSize <= 48; atdSize += 3 {
+		for percent := 100; percent >= 100; percent -= 10 { //TODO: matching proportion like 50% ATD is matched
+			min_percent_matched = percent
+			for selectedNum := maxHouseholdsNumber; selectedNum <= maxHouseholdsNumber; selectedNum += 5 {
+				maxHouseholdsNumber = selectedNum
+				processGreedy(fileList[:selectedNum], params)
+			}
 		}
 	}
+
 	fmt.Printf("Main() Done in %s \n", time.Since(start))
 }
 
@@ -269,8 +269,8 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 			break
 		}
 	}
-	fmt.Println("markedNumbers:", markedNumbers)
-	fmt.Println("thresholdNumber ", thresholdNumber)
+	// fmt.Println("markedNumbers:", markedNumbers)
+	// fmt.Println("thresholdNumber ", thresholdNumber)
 
 	greedyEncryptBlocks(P)
 	memberIdentificationAttack(P) //under current partial encryption
@@ -412,7 +412,7 @@ func memberIdentificationAttack(P []*party) { //TODO:atd size
 	var std float64
 	var mean float64
 	var standard_error float64
-
+	asrList = []float64{}
 	for attackLoop := 0; attackLoop < GLOBAL_ATTACK_LOOP; attackLoop++ {
 		attackSuccessCount := 0
 		attackCount := 0
@@ -433,7 +433,8 @@ func memberIdentificationAttack(P []*party) { //TODO:atd size
 		fmt.Printf("Global Attack Loop:%d\nASR: %.3f, std:%.3f, mean ASR: %.3f, standard error: %.3f\n=====\n", attackLoop, asr, std, mean, standard_error)
 	}
 
-	fmt.Printf("Attack Summary:\nNumber of households: %d, mean ASR: %.3f, standard error: %.3f\n", maxHouseholdsNumber, mean, standard_error)
+	fmt.Println("Attack Summary:")
+	fmt.Printf("EncryptionRatio: %d, atdSize: %d, Number of households: %d, mean ASR: %.3f, standard error: %.3f\n", encryptionRatio, atdSize, maxHouseholdsNumber, mean, standard_error)
 	fmt.Println("asrList:", asrList)
 }
 
