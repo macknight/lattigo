@@ -83,7 +83,8 @@ const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var atdSize = 24 // element number of unique attacker data
 var min_percent_matched = 100
-var max_attackLoop = 10 //2000
+var GLOBAL_ATTACK_LOOP = 100
+var LOCAL_ATTACK_LOOP = 1000
 
 var maxHouseholdsNumber = 80
 
@@ -103,7 +104,7 @@ var transitionEqualityThreshold int
 var sectionNum int
 var usedRandomStartPartyPairs = map[int][]int{}
 var usedHouses = map[int]int{}
-var house_sample = []float64{}
+var asrList = []float64{}
 var edgeNumberArray = []int{}
 
 func main() {
@@ -151,7 +152,7 @@ func main() {
 	}
 
 	fmt.Println("SE threshold ", 0.01)
-	fmt.Println("Max Attack Loop: ", max_attackLoop)
+	fmt.Println("Global Attack Loop: ", GLOBAL_ATTACK_LOOP)
 	fmt.Println("ATD Size: ", atdSize)
 	fmt.Println("Number of Households: ", maxHouseholdsNumber)
 	fmt.Println("Encryption ratio: 60%")
@@ -217,37 +218,7 @@ func main() {
 		//maxHouseholdsNumber = 80
 		for selectedNum := 3; selectedNum <= 3; selectedNum += 5 {
 			maxHouseholdsNumber = selectedNum
-			var standard_error = 0.0
-			var std = 0.0
-			var mean = 0.0
-			house_sample = []float64{}
-			for loop_count := 0; loop_count < max_attackLoop; loop_count++ {
-				var randomFileList []string
-				if maxHouseholdsNumber == 80 {
-					randomFileList = fileList
-				} else {
-					// tmpHouseIDs := make([]int, maxHouseholdsNumber)
-					// for i := 0; i < maxHouseholdsNumber; i++ {
-					// 	tmpHouseIDs[i] = i
-					// }
-
-					// randomFileList = []string{}
-					// for index := 0; index < maxHouseholdsNumber; index++ {
-					// 	r := getRandom(maxHouseholdsNumber - index)
-					// 	randomFileList = append(randomFileList, fileList[tmpHouseIDs[r]])
-					// 	tmpHouseIDs[r] = tmpHouseIDs[maxHouseholdsNumber-1-index]
-					// }
-					randomFileList = fileList[:selectedNum]
-				}
-				processGreedy(randomFileList, params)
-				std, mean = calculateStandardDeviation(house_sample)
-				standard_error = std / math.Sqrt(float64(len(house_sample)))
-				if standard_error <= 0.01 && loop_count >= 100 {
-					loop_count++
-					break
-				}
-			}
-			fmt.Printf("Number of households: %d, mean ASR: %.3f, standard error: %.3f\n", maxHouseholdsNumber, mean, standard_error)
+			processGreedy(fileList[:selectedNum], params)
 		}
 	}
 	fmt.Printf("Main() Done in %s \n", time.Since(start))
@@ -261,26 +232,22 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 	edgeSize := len(P) * (len(P) - 1) * sectionNum * sectionNum / 2
 	edges := make([]float64, edgeSize)
 
-	maxUniquenessScore := -1.0
 	markedFirstHousehold := -1
 	markedFirstSection := -1
 	markedSecondHousehold := -1
 	markedSecondSection := -1
 	markedNumbers := 0
+	previousMarkedNumbers := 0
 
 	thresholdNumber := len(P) * globalPartyRows * encryptionRatio / 100
-	fmt.Println("len(P) ", len(P))
-	fmt.Println("globalPartyRows ", globalPartyRows)
-	fmt.Println("encryptionRatio ", encryptionRatio)
-	fmt.Println("thresholdNumber ", thresholdNumber)
+	// fmt.Println("len(P) ", len(P))
+	// fmt.Println("globalPartyRows ", globalPartyRows)
+	// fmt.Println("encryptionRatio ", encryptionRatio)
 
 	for markedNumbers < thresholdNumber {
+		maxUniquenessScore := -1.0
 		for edge_index := range edges {
 			p_index_first, s_index_first, p_index_second, s_index_second := getDetailedBlocksForEdge(edge_index, len(P), sectionNum)
-			// fmt.Println("p_index_first ", p_index_first)
-			// fmt.Println("s_index_first ", s_index_first)
-			// fmt.Println("p_index_second ", p_index_second)
-			// fmt.Println("s_index_second ", s_index_second)
 
 			edges[edge_index] = calculateUniquenessBetweenBlocks(P, p_index_first, s_index_first, p_index_second, s_index_second)
 
@@ -292,14 +259,20 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 				markedSecondSection = s_index_second
 			}
 		}
-		// fmt.Println("edges[", edge_index, "]=", edges[edge_index])
-		fmt.Println("markedFirstHousehold ", markedFirstHousehold)
-		fmt.Println("markedFirstSection ", markedFirstSection)
-		fmt.Println("markedSecondHousehold ", markedSecondHousehold)
-		fmt.Println("markedSecondSection ", markedSecondSection)
+		// fmt.Println("edges:", edges)
+		previousMarkedNumbers = markedNumbers
 		markedNumbers = greedyMarkBlocks(markedNumbers, P, markedFirstHousehold, markedFirstSection, markedSecondHousehold, markedSecondSection)
-		fmt.Println("markedNumbers:", markedNumbers)
+		// fmt.Println("markedFirstHousehold:", markedFirstHousehold)
+		// fmt.Println("markedFirstSection:", markedFirstSection)
+		// fmt.Println("markedSecondHousehold:", markedSecondHousehold)
+		// fmt.Println("markedSecondSection:", markedSecondSection)
+		// fmt.Println("previousMarkedNumbers:", previousMarkedNumbers)
+		// fmt.Println("markedNumbers:", markedNumbers)
+		if markedNumbers == previousMarkedNumbers {
+			break
+		}
 	}
+	fmt.Println("thresholdNumber ", thresholdNumber)
 
 	greedyEncryptBlocks(P)
 	memberIdentificationAttack(P) //under current partial encryption
@@ -309,9 +282,9 @@ func greedyEncryptBlocks(P []*party) {
 	for _, po := range P {
 		for j := 0; j < globalPartyRows; j++ {
 			if po.greedyFlags[j/sectionSize][j%sectionSize] == 1 {
-				po.encryptedInput = append(po.encryptedInput, -0.1)
+				po.encryptedInput[j] = -0.1
 			} else {
-				po.encryptedInput = append(po.encryptedInput, po.rawInput[j])
+				po.encryptedInput[j] = po.rawInput[j]
 			}
 		}
 	}
@@ -424,31 +397,36 @@ func getDetailedBlocksForEdge(edge_index, householdNumber, sectionNumber int) (i
 }
 
 func memberIdentificationAttack(P []*party) { //TODO:atd size
-	var attackSuccessNum int
-	var attackCount int
-	var sample = []float64{}
 	var std float64
+	var mean float64
 	var standard_error float64
-	for attackCount = 0; attackCount < max_attackLoop; attackCount++ {
-		var successNum = attackParties(P)
-		attackSuccessNum += successNum
-		sample = append(sample, float64(successNum))
-		std, _ = calculateStandardDeviation(sample)
-		standard_error = std / math.Sqrt(float64(len(sample)))
-		if standard_error <= 0.01 && attackCount >= 100 {
-			attackCount++
+
+	for attackLoop := 0; attackLoop < GLOBAL_ATTACK_LOOP; attackLoop++ {
+		attackSuccessCount := 0
+		attackCount := 0
+		for ; attackCount < LOCAL_ATTACK_LOOP; attackCount++ {
+			if attackParties(P) {
+				attackSuccessCount++
+			}
+		}
+		usedRandomStartPartyPairs = map[int][]int{} //clear map for each global attack loop
+		asr := float64(attackSuccessCount) / float64(attackCount)
+		asrList = append(asrList, asr)
+		std, mean = calculateStandardDeviation(asrList)
+		standard_error = std / math.Sqrt(float64(len(asrList)))
+		if standard_error <= 0.01 && attackLoop >= 100 {
+			attackLoop++
 			break
 		}
+		fmt.Printf("Attack Loop:%d\nASR: %.3f, std:%.3f, mean ASR: %.3f, standard error: %.3f\n=====\n", attackLoop, asr, std, mean, standard_error)
 	}
-	house_sample = append(house_sample, float64(attackSuccessNum)/float64(attackCount))
 
-	usedRandomStartPartyPairs = map[int][]int{} //clear map for the next loop
+	fmt.Printf("Attack Summary:\nNumber of households: %d, mean ASR: %.3f, standard error: %.3f\n", maxHouseholdsNumber, mean, standard_error)
+	fmt.Println("asrList:", asrList)
 }
 
-func attackParties(P []*party) (attackSuccessNum int) {
+func attackParties(P []*party) (result bool) {
 	// Generate a leaked data block and simulate attack
-	attackSuccessNum = 0
-
 	var valid = false
 	var randomParty int
 	var randomStart int
@@ -466,14 +444,15 @@ func attackParties(P []*party) (attackSuccessNum int) {
 			}
 		}
 	}
-
+	// fmt.Printf("randomParty:%d,randomStart:%d\n", randomParty, randomStart)
 	var attacker_data_block = P[randomParty].rawInput[randomStart : randomStart+atdSize]
 
 	var matched_households = identifyParty(P, attacker_data_block, randomParty, randomStart)
 	if len(matched_households) == 1 && matched_households[0] == randomParty {
-		attackSuccessNum++
+		return true
+	} else {
+		return false
 	}
-	return
 }
 
 func getRandomStart(party int) int {
@@ -513,8 +492,8 @@ func uniqueDataBlock(P []*party, arr []float64, party int, index int, input_type
 	// Check if the data block is unique in the dataset
 	var unique bool = true
 
-	for pn, po := range P {
-		if pn == party {
+	for pi, po := range P {
+		if pi == party {
 			continue
 		}
 		var household_data []float64
@@ -527,7 +506,7 @@ func uniqueDataBlock(P []*party, arr []float64, party int, index int, input_type
 			var target = household_data[i : i+atdSize]
 			if reflect.DeepEqual(target, arr) {
 				unique = false
-				usedRandomStartPartyPairs[pn] = append(usedRandomStartPartyPairs[pn], i)
+				usedRandomStartPartyPairs[pi] = append(usedRandomStartPartyPairs[pi], i)
 				break
 			}
 		}
@@ -725,11 +704,18 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 			po.greedyFlags[i] = make([]int, sectionSize)
 		}
 
+		delta := 0.0
 		for i := range po.rawInput {
-			decoratedValue := math.Round(partyRows[i]*1000) / 1000 // hold 3 decimal places
+			realValue := math.Round(partyRows[i]*1000) / 1000    // hold 3 decimal places
+			decoratedValue := math.Round(partyRows[i]*100) / 100 // decrease data uniqueness
+			delta += decoratedValue - realValue
+
 			po.rawInput[i] = decoratedValue
-			po.encryptedInput[i] = decoratedValue
 			po.greedyInputs[i/sectionSize][i%sectionSize] = decoratedValue
+			if i == len(po.rawInput)-1 {
+				po.rawInput[i] -= delta
+				po.greedyInputs[i/sectionSize][i%sectionSize] -= delta
+			}
 
 			val, exists := frequencyMap[po.rawInput[i]]
 			if exists {
@@ -741,6 +727,7 @@ func genInputs(P []*party) (expSummation, expAverage, expDeviation []float64, mi
 
 			expSummation[pi] += po.rawInput[i]
 		} //each line of one person
+		// os.Exit(0)
 
 		expAverage[pi] = expSummation[pi] / float64(globalPartyRows)
 		for i := range po.rawInput {
