@@ -113,12 +113,12 @@ var asrList []float64
 var edgeNumberArray = []int{}
 
 func main() {
-	var args []int
+	var err error
 
+	var args []int
 	for _, arg := range os.Args[1:] {
 		num, err := strconv.Atoi(arg)
 		if err != nil {
-			fmt.Println("Error:", err)
 			return
 		}
 		args = append(args, num)
@@ -132,7 +132,23 @@ func main() {
 		encryptionRatio = args[4]
 	}
 
-	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	//write to file
+	str := "asr_greedy_enc_"
+	fileName := fmt.Sprintf("%s%d.txt", str, encryptionRatio)
+
+	file, err := os.Create(fileName)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	originalOutput := os.Stdout
+	defer func() { os.Stdout = originalOutput }()
+	os.Stdout = file
+	//write to file
+
+	fmt.Println(">>>>>>>>>>")
 	if currentStrategy == STRATEGY_GLOBAL {
 		fmt.Println("Strategy: Global Entropy High To Low")
 	} else if currentStrategy == STRATEGY_HOUSEHOLD {
@@ -167,7 +183,6 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 	start := time.Now()
 	fileList := []string{}
-	var err error
 	paramsDef := ckks.PN10QP27CI
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
