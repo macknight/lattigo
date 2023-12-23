@@ -350,9 +350,7 @@ func calculateUniquenessBetweenBlocks(P []*party, p_index_first, s_index_first, 
 	firstBlockFlags := P[p_index_first].greedyFlags[s_index_first]
 	secondBlockFlags := P[p_index_second].greedyFlags[s_index_second]
 
-	// P_U:possibility of uniqueness
-	// decoratedValues holds 2 decimal precision
-	// P_U(0,0)=0, P_U(0,1)=1, P_U(0,X)=0.9, P_U(X,X)=0.9, 0.9 is empirical cause most electricity values range from 0.0-0.9 (10 options)
+	// Uniqueness(0,0)=0, Uniqueness(0,1)=1, Uniqueness(0,?)=0.9, Uniqueness(?,?)=0.9. And 0.9 is empirical cause most record values range (10 options like 0.0-0.9 in electricity dataset)
 	uniquenessScore := 0.0
 	for i := 0; i < sectionSize; i++ {
 		if firstBlockFlags[i] == 1 || secondBlockFlags[i] == 1 {
