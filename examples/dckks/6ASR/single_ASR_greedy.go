@@ -133,8 +133,8 @@ func main() {
 	}
 
 	//write to file
-	str := "asr_greedy_enc_"
-	fileName := fmt.Sprintf("%s%d.txt", str, encryptionRatio)
+	str := "asr_greedy_enc"
+	fileName := fmt.Sprintf("%s_%d_%d.txt", str, currentDataset, encryptionRatio)
 
 	file, err := os.Create(fileName)
 	if err != nil {
