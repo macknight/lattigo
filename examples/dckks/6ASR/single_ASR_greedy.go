@@ -321,7 +321,7 @@ func greedyEncryptBlocks(P []*party) {
 }
 
 func greedyMarkBlocks(markedNumbers, thresholdNumber int, P []*party, markedFirstHousehold, markedFirstSection, markedSecondHousehold, markedSecondSection int) int {
-	fmt.Println("greedyMarkBlocks")
+	// fmt.Println("greedyMarkBlocks")
 	firstBlock := P[markedFirstHousehold].greedyInputs[markedFirstSection]
 	secondBlock := P[markedSecondHousehold].greedyInputs[markedSecondSection]
 	firstBlockFlags := P[markedFirstHousehold].greedyFlags[markedFirstSection]
