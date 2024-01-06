@@ -258,6 +258,7 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 	markedSecondHousehold := -1
 	markedSecondSection := -1
 	markedNumbers := 0
+	previousMarkedNumbers := 0
 
 	thresholdNumber := len(P) * globalPartyRows * encryptionRatio / 100
 
@@ -277,7 +278,11 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 			}
 		}
 		// fmt.Println("edges:", edges)
+		previousMarkedNumbers = markedNumbers
 		markedNumbers = greedyMarkBlocks(markedNumbers, thresholdNumber, P, markedFirstHousehold, markedFirstSection, markedSecondHousehold, markedSecondSection)
+		if markedNumbers == previousMarkedNumbers {
+			break
+		}
 	}
 	// fmt.Println("markedNumbers:", markedNumbers)
 	// fmt.Println("thresholdNumber ", thresholdNumber)
@@ -299,8 +304,6 @@ func greedyEncryptBlocks(P []*party) {
 }
 
 func greedyMarkBlocks(markedNumbers, thresholdNumber int, P []*party, markedFirstHousehold, markedFirstSection, markedSecondHousehold, markedSecondSection int) int {
-	previousMarkedNumers := markedNumbers
-
 	firstBlock := P[markedFirstHousehold].greedyInputs[markedFirstSection]
 	secondBlock := P[markedSecondHousehold].greedyInputs[markedSecondSection]
 	firstBlockFlags := P[markedFirstHousehold].greedyFlags[markedFirstSection]
@@ -336,12 +339,6 @@ func greedyMarkBlocks(markedNumbers, thresholdNumber int, P []*party, markedFirs
 				}
 			}
 		}
-	}
-	// for datasets with low uniqueness, e.g., water dataset, so that markedNumbers can increase
-	if previousMarkedNumers == markedNumbers {
-		randomIndex := getRandom(sectionSize)
-		firstBlockFlags[randomIndex] = 1
-		markedNumbers++
 	}
 
 	return markedNumbers
