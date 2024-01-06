@@ -247,6 +247,7 @@ func main() {
 
 // main start
 func processGreedy(fileList []string, params ckks.Parameters) {
+	fmt.Println("processGreedy")
 	P := genparties(params, fileList)
 	genInputs(P)
 	intializeEdgeRelated(P)
@@ -284,8 +285,24 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 			break
 		}
 	}
-	// fmt.Println("markedNumbers:", markedNumbers)
-	// fmt.Println("thresholdNumber ", thresholdNumber)
+	//if not sufficient records are encrypted.
+	if markedNumbers < thresholdNumber {
+		fmt.Printf("not sufficient records are encrypted. markedNumbers=%d, thresholdNumber=%d\n", markedNumbers, thresholdNumber)
+
+		for markedNumbers < thresholdNumber {
+			randomPartyIndex := getRandom(len(P))
+			randomBlockIndex := getRandom(sectionNum)
+			randomRecordIndex := getRandom(sectionSize)
+			randomBlockFlags := P[randomPartyIndex].greedyFlags[randomBlockIndex]
+
+			if randomBlockFlags[randomRecordIndex] == 0 {
+				randomBlockFlags[randomRecordIndex] = 1
+				markedNumbers++
+			}
+		}
+		fmt.Printf("sufficient records are encrypted. markedNumbers=%d, thresholdNumber=%d\n", markedNumbers, thresholdNumber)
+	}
+	//make sure markedNumbers is equal to thresholdNumber
 
 	greedyEncryptBlocks(P)
 	memberIdentificationAttack(P) //under current partial encryption
@@ -304,6 +321,7 @@ func greedyEncryptBlocks(P []*party) {
 }
 
 func greedyMarkBlocks(markedNumbers, thresholdNumber int, P []*party, markedFirstHousehold, markedFirstSection, markedSecondHousehold, markedSecondSection int) int {
+	fmt.Println("greedyMarkBlocks")
 	firstBlock := P[markedFirstHousehold].greedyInputs[markedFirstSection]
 	secondBlock := P[markedSecondHousehold].greedyInputs[markedSecondSection]
 	firstBlockFlags := P[markedFirstHousehold].greedyFlags[markedFirstSection]
