@@ -176,7 +176,7 @@ func main() {
 	fmt.Println("SE threshold ", 0.01)
 	fmt.Println("Global Attack Loop: ", GLOBAL_ATTACK_LOOP)
 	fmt.Println("Number of Households: ", maxHouseholdsNumber)
-	fmt.Println("Encryption ratio: 60%")
+	fmt.Println("Encryption ratio: ", encryptionRatio, "%")
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
