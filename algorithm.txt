@@ -1,0 +1,48 @@
+\begin{algorithm}[t]
+   \caption{Uniqueness-based Record-level Selective Encryption.}\label{alg:algo_greedy}
+   \textbf{Input:} 
+   $H$, the households array.
+  
+   \textbf{Input:} 
+        $K$, the minimal number of records needed to be encrypted.
+
+   \begin{algorithmic}[1]
+        \State $num \leftarrow 0$
+        \While{\(num < K\)}
+      \State $pIdx \gets maxPIdx(H)$
+      \State $(hIdx1, bIdx1, hIdx2, bIdx2) \gets convert(H, pIdx)$
+
+      \State $b1 \gets getB(H, hIdx1, bIdx1)$
+      \State $b2 \gets getB(H, hIdx2, bIdx2)$
+      \State $num' \gets num$
+
+      \For {$r \in b1$}
+         \State $rIdx \gets getRIdx(b1, r)$
+         \State $r' \gets getRrd(b2, rIdx)$
+         \If{$!isEnc(r)$ \textbf{and} $!isEnc(r')$}
+            \If{\(r \neq r'\)}
+               \State $encRrd(r)$
+               \State $encRrd(r')$
+               \State $num \leftarrow num + 2$
+            \EndIf
+         \ElsIf{$!isEnc(r)$ \textbf{and} $isEnc(r')$}
+            \If{\(r \neq r'\)}
+               \State $encRrd(r)$
+               \State $num \leftarrow num + 1$
+            \EndIf
+         \ElsIf{$isEnc(r)$ \textbf{and} $!isEnc(r')$}
+            \If{\(r \neq r'\)}
+               \State $encRrd(r')$
+               \State $num \leftarrow num + 1$
+            \EndIf
+         \EndIf
+         \If{$num \geq K$}
+            \State  $\textbf{BREAK}$
+         \EndIf
+      \EndFor
+      \If{$num = num'$}
+        \State $num \leftarrow num + encRanBlk(H, K - num)$
+      \EndIf
+   \EndWhile
+   \end{algorithmic}
+\end{algorithm}
