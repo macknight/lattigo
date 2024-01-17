@@ -1,0 +1,19 @@
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Strategy: Global Entropy High To Low
+Dataset: Electricity
+Unique Attacker Block: False
+Target: Entropy based
+SE threshold  0.01
+Max Attack Loop:  1
+ATD Size:  24
+Number of Households:  60
+Encryption ratio:  60 %
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+wd: C:\Users\23304161\source\repos\lattigo
+path: examples\datasets\electricity\households_10240
+folder: C:\Users\23304161\source\repos\lattigo\examples\datasets\electricity\households_10240
+fileList:80
+Households, ASR, Standard Error
+Number of households: 80, mean ASR: NaN, standard error: NaN
+asr_enxteded encryption time: 0.10 seconds
+Main() Done in 702.2209ms 

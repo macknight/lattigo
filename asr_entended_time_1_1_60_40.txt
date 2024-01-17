@@ -1,0 +1,19 @@
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Strategy: Global Entropy High To Low
+Dataset: Water
+Unique Attacker Block: False
+Target: Entropy based
+SE threshold  0.01
+Max Attack Loop:  1
+ATD Size:  24
+Number of Households:  40
+Encryption ratio:  60 %
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+wd: C:\Users\23304161\source\repos\lattigo
+path: examples\datasets\water\households_10240
+folder: C:\Users\23304161\source\repos\lattigo\examples\datasets\water\households_10240
+fileList:80
+Households, ASR, Standard Error
+Number of households: 80, mean ASR: NaN, standard error: NaN
+asr_enxteded encryption time: 0.09 seconds
+Main() Done in 620.6612ms 

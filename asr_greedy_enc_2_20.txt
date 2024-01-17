@@ -1,0 +1,2300 @@
+>>>>>>>>>>
+Strategy: Global Entropy High To Low
+Dataset: Electricity
+Unique Attacker Block: False
+Target: Entropy based
+encryptionRatio: 20
+SE threshold  0.01
+Global Attack Loop:  2000
+Number of Households:  80
+Encryption ratio:  20 %
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+wd: C:\Users\23304161\source\repos\lattigo
+path: examples\datasets\electricity\households_10240
+folder: C:\Users\23304161\source\repos\lattigo\examples\datasets\electricity\households_10240
+fileList:80
+processGreedy
+Global Attack Loop:0
+ASR: 0.015, std:NaN, mean ASR: 0.015, standard error: NaN
+=====
+Global Attack Loop:1
+ASR: 0.013, std:0.001, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:2
+ASR: 0.013, std:0.001, mean ASR: 0.013, standard error: 0.001
+=====
+Global Attack Loop:3
+ASR: 0.014, std:0.001, mean ASR: 0.013, standard error: 0.000
+=====
+Global Attack Loop:4
+ASR: 0.015, std:0.001, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:5
+ASR: 0.017, std:0.002, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:6
+ASR: 0.017, std:0.002, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:7
+ASR: 0.018, std:0.002, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:8
+ASR: 0.011, std:0.002, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:9
+ASR: 0.011, std:0.002, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:10
+ASR: 0.015, std:0.002, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:11
+ASR: 0.011, std:0.002, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:12
+ASR: 0.013, std:0.002, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:13
+ASR: 0.013, std:0.002, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:14
+ASR: 0.014, std:0.002, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:15
+ASR: 0.018, std:0.002, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:16
+ASR: 0.015, std:0.002, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:17
+ASR: 0.019, std:0.003, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:18
+ASR: 0.014, std:0.002, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:19
+ASR: 0.015, std:0.002, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:20
+ASR: 0.018, std:0.002, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:21
+ASR: 0.011, std:0.003, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:22
+ASR: 0.018, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:23
+ASR: 0.018, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:24
+ASR: 0.010, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:25
+ASR: 0.018, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:26
+ASR: 0.017, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:27
+ASR: 0.016, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:28
+ASR: 0.009, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:29
+ASR: 0.017, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:30
+ASR: 0.009, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:31
+ASR: 0.011, std:0.003, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:32
+ASR: 0.020, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:33
+ASR: 0.009, std:0.003, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:34
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:35
+ASR: 0.022, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:36
+ASR: 0.012, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:37
+ASR: 0.015, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:38
+ASR: 0.009, std:0.003, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:39
+ASR: 0.017, std:0.003, mean ASR: 0.015, standard error: 0.001
+=====
+Global Attack Loop:40
+ASR: 0.012, std:0.003, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:41
+ASR: 0.013, std:0.003, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:42
+ASR: 0.012, std:0.003, mean ASR: 0.014, standard error: 0.001
+=====
+Global Attack Loop:43
+ASR: 0.014, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:44
+ASR: 0.018, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:45
+ASR: 0.020, std:0.003, mean ASR: 0.015, standard error: 0.000
+=====
+Global Attack Loop:46
+ASR: 0.013, std:0.003, mean ASR: 0.015, standard error: 0.000
+=====
+Global Attack Loop:47
+ASR: 0.009, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:48
+ASR: 0.012, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:49
+ASR: 0.014, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:50
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:51
+ASR: 0.013, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:52
+ASR: 0.014, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:53
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:54
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:55
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:56
+ASR: 0.017, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:57
+ASR: 0.018, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:58
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:59
+ASR: 0.010, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:60
+ASR: 0.011, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:61
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:62
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:63
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:64
+ASR: 0.011, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:65
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:66
+ASR: 0.013, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:67
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:68
+ASR: 0.013, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:69
+ASR: 0.017, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:70
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:71
+ASR: 0.017, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:72
+ASR: 0.018, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:73
+ASR: 0.013, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:74
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:75
+ASR: 0.018, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:76
+ASR: 0.011, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:77
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:78
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:79
+ASR: 0.010, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:80
+ASR: 0.024, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:81
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:82
+ASR: 0.019, std:0.003, mean ASR: 0.015, standard error: 0.000
+=====
+Global Attack Loop:83
+ASR: 0.017, std:0.003, mean ASR: 0.015, standard error: 0.000
+=====
+Global Attack Loop:84
+ASR: 0.012, std:0.003, mean ASR: 0.015, standard error: 0.000
+=====
+Global Attack Loop:85
+ASR: 0.013, std:0.003, mean ASR: 0.015, standard error: 0.000
+=====
+Global Attack Loop:86
+ASR: 0.018, std:0.003, mean ASR: 0.015, standard error: 0.000
+=====
+Global Attack Loop:87
+ASR: 0.012, std:0.003, mean ASR: 0.015, standard error: 0.000
+=====
+Global Attack Loop:88
+ASR: 0.013, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:89
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:90
+ASR: 0.013, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:91
+ASR: 0.013, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:92
+ASR: 0.011, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:93
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:94
+ASR: 0.018, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:95
+ASR: 0.017, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:96
+ASR: 0.017, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:97
+ASR: 0.015, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:98
+ASR: 0.011, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Global Attack Loop:99
+ASR: 0.016, std:0.003, mean ASR: 0.014, standard error: 0.000
+=====
+Attack Summary:
+EncryptionRatio: 20, atdSize: 3, Number of households: 80, mean ASR: 0.014, standard error: 0.000
+asrList: [0.0145 0.013 0.0125 0.014 0.0145 0.017 0.017 0.0175 0.0105 0.011 0.0155 0.0115 0.0125 0.0125 0.014 0.0175 0.0145 0.0195 0.014 0.0155 0.018 0.011 0.0185 0.0185 0.01 0.0185 0.017 0.016 0.0095 0.0165 0.0095 0.011 0.02 0.009 0.0145 0.022 0.012 0.015 0.0085 0.017 0.012 0.0125 0.012 0.014 0.018 0.02 0.0125 0.009 0.012 0.014 0.0145 0.0125 0.014 0.0155 0.015 0.0145 0.017 0.0175 0.015 0.01 0.011 0.0145 0.015 0.015 0.011 0.015 0.0135 0.0145 0.013 0.0165 0.0145 0.017 0.0185 0.0125 0.0145 0.018 0.011 0.0155 0.0145 0.01 0.024 0.0155 0.0195 0.0165 0.012 0.013 0.0175 0.012 0.0125 0.0145 0.0125 0.0135 0.011 0.0145 0.0175 0.017 0.0165 0.0145 0.0115 0.016 0.0145]
+processGreedy
+Global Attack Loop:0
+ASR: 0.230, std:NaN, mean ASR: 0.230, standard error: NaN
+=====
+Global Attack Loop:1
+ASR: 0.234, std:0.003, mean ASR: 0.232, standard error: 0.002
+=====
+Global Attack Loop:2
+ASR: 0.238, std:0.004, mean ASR: 0.234, standard error: 0.002
+=====
+Global Attack Loop:3
+ASR: 0.234, std:0.003, mean ASR: 0.234, standard error: 0.002
+=====
+Global Attack Loop:4
+ASR: 0.239, std:0.004, mean ASR: 0.235, standard error: 0.002
+=====
+Global Attack Loop:5
+ASR: 0.253, std:0.008, mean ASR: 0.238, standard error: 0.003
+=====
+Global Attack Loop:6
+ASR: 0.238, std:0.007, mean ASR: 0.238, standard error: 0.003
+=====
+Global Attack Loop:7
+ASR: 0.259, std:0.010, mean ASR: 0.241, standard error: 0.004
+=====
+Global Attack Loop:8
+ASR: 0.244, std:0.009, mean ASR: 0.241, standard error: 0.003
+=====
+Global Attack Loop:9
+ASR: 0.256, std:0.010, mean ASR: 0.242, standard error: 0.003
+=====
+Global Attack Loop:10
+ASR: 0.241, std:0.010, mean ASR: 0.242, standard error: 0.003
+=====
+Global Attack Loop:11
+ASR: 0.231, std:0.010, mean ASR: 0.241, standard error: 0.003
+=====
+Global Attack Loop:12
+ASR: 0.243, std:0.009, mean ASR: 0.242, standard error: 0.003
+=====
+Global Attack Loop:13
+ASR: 0.240, std:0.009, mean ASR: 0.241, standard error: 0.002
+=====
+Global Attack Loop:14
+ASR: 0.239, std:0.009, mean ASR: 0.241, standard error: 0.002
+=====
+Global Attack Loop:15
+ASR: 0.247, std:0.008, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:16
+ASR: 0.253, std:0.009, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:17
+ASR: 0.241, std:0.008, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:18
+ASR: 0.237, std:0.008, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:19
+ASR: 0.245, std:0.008, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:20
+ASR: 0.233, std:0.008, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:21
+ASR: 0.240, std:0.008, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:22
+ASR: 0.240, std:0.008, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:23
+ASR: 0.266, std:0.009, mean ASR: 0.243, standard error: 0.002
+=====
+Global Attack Loop:24
+ASR: 0.241, std:0.009, mean ASR: 0.243, standard error: 0.002
+=====
+Global Attack Loop:25
+ASR: 0.237, std:0.009, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:26
+ASR: 0.242, std:0.009, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:27
+ASR: 0.242, std:0.008, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:28
+ASR: 0.239, std:0.008, mean ASR: 0.242, standard error: 0.002
+=====
+Global Attack Loop:29
+ASR: 0.245, std:0.008, mean ASR: 0.242, standard error: 0.001
+=====
+Global Attack Loop:30
+ASR: 0.252, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:31
+ASR: 0.251, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:32
+ASR: 0.234, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:33
+ASR: 0.238, std:0.008, mean ASR: 0.242, standard error: 0.001
+=====
+Global Attack Loop:34
+ASR: 0.233, std:0.008, mean ASR: 0.242, standard error: 0.001
+=====
+Global Attack Loop:35
+ASR: 0.239, std:0.008, mean ASR: 0.242, standard error: 0.001
+=====
+Global Attack Loop:36
+ASR: 0.261, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:37
+ASR: 0.249, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:38
+ASR: 0.235, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:39
+ASR: 0.236, std:0.008, mean ASR: 0.242, standard error: 0.001
+=====
+Global Attack Loop:40
+ASR: 0.256, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:41
+ASR: 0.250, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:42
+ASR: 0.239, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:43
+ASR: 0.245, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:44
+ASR: 0.232, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:45
+ASR: 0.246, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:46
+ASR: 0.240, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:47
+ASR: 0.244, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:48
+ASR: 0.238, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:49
+ASR: 0.240, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:50
+ASR: 0.240, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:51
+ASR: 0.236, std:0.008, mean ASR: 0.242, standard error: 0.001
+=====
+Global Attack Loop:52
+ASR: 0.250, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:53
+ASR: 0.248, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:54
+ASR: 0.234, std:0.008, mean ASR: 0.242, standard error: 0.001
+=====
+Global Attack Loop:55
+ASR: 0.254, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:56
+ASR: 0.254, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:57
+ASR: 0.240, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:58
+ASR: 0.265, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:59
+ASR: 0.245, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:60
+ASR: 0.236, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:61
+ASR: 0.240, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:62
+ASR: 0.242, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:63
+ASR: 0.236, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:64
+ASR: 0.236, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:65
+ASR: 0.248, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:66
+ASR: 0.251, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:67
+ASR: 0.221, std:0.008, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:68
+ASR: 0.226, std:0.009, mean ASR: 0.242, standard error: 0.001
+=====
+Global Attack Loop:69
+ASR: 0.256, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:70
+ASR: 0.251, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:71
+ASR: 0.256, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:72
+ASR: 0.237, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:73
+ASR: 0.257, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:74
+ASR: 0.245, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:75
+ASR: 0.261, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:76
+ASR: 0.240, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:77
+ASR: 0.256, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:78
+ASR: 0.233, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:79
+ASR: 0.237, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:80
+ASR: 0.238, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:81
+ASR: 0.253, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:82
+ASR: 0.252, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:83
+ASR: 0.230, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:84
+ASR: 0.254, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:85
+ASR: 0.234, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:86
+ASR: 0.243, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:87
+ASR: 0.256, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:88
+ASR: 0.221, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:89
+ASR: 0.234, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:90
+ASR: 0.256, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:91
+ASR: 0.238, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:92
+ASR: 0.249, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:93
+ASR: 0.242, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:94
+ASR: 0.237, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:95
+ASR: 0.233, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:96
+ASR: 0.243, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:97
+ASR: 0.248, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:98
+ASR: 0.243, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Global Attack Loop:99
+ASR: 0.249, std:0.009, mean ASR: 0.243, standard error: 0.001
+=====
+Attack Summary:
+EncryptionRatio: 20, atdSize: 6, Number of households: 80, mean ASR: 0.243, standard error: 0.001
+asrList: [0.2295 0.234 0.238 0.2335 0.2395 0.253 0.2385 0.2585 0.2445 0.2555 0.2415 0.2305 0.2435 0.2405 0.239 0.247 0.2525 0.2415 0.237 0.2455 0.233 0.2405 0.24 0.2655 0.241 0.237 0.242 0.242 0.239 0.245 0.252 0.251 0.2335 0.238 0.233 0.2395 0.261 0.249 0.2355 0.2365 0.256 0.25 0.239 0.245 0.2315 0.246 0.2405 0.244 0.2385 0.2405 0.24 0.2365 0.25 0.248 0.2335 0.254 0.2535 0.2405 0.2645 0.245 0.2365 0.2405 0.2425 0.2365 0.2365 0.248 0.2505 0.2205 0.2255 0.2555 0.251 0.256 0.2375 0.2565 0.245 0.2605 0.2405 0.256 0.2325 0.2375 0.238 0.2525 0.252 0.2295 0.254 0.2335 0.243 0.256 0.2205 0.2345 0.2555 0.2385 0.2495 0.242 0.2375 0.2325 0.243 0.248 0.2435 0.249 0.2435]
+processGreedy
+Global Attack Loop:0
+ASR: 0.533, std:NaN, mean ASR: 0.533, standard error: NaN
+=====
+Global Attack Loop:1
+ASR: 0.547, std:0.010, mean ASR: 0.540, standard error: 0.007
+=====
+Global Attack Loop:2
+ASR: 0.537, std:0.007, mean ASR: 0.539, standard error: 0.004
+=====
+Global Attack Loop:3
+ASR: 0.519, std:0.012, mean ASR: 0.534, standard error: 0.006
+=====
+Global Attack Loop:4
+ASR: 0.524, std:0.011, mean ASR: 0.532, standard error: 0.005
+=====
+Global Attack Loop:5
+ASR: 0.536, std:0.010, mean ASR: 0.533, standard error: 0.004
+=====
+Global Attack Loop:6
+ASR: 0.545, std:0.010, mean ASR: 0.535, standard error: 0.004
+=====
+Global Attack Loop:7
+ASR: 0.542, std:0.010, mean ASR: 0.536, standard error: 0.003
+=====
+Global Attack Loop:8
+ASR: 0.529, std:0.010, mean ASR: 0.535, standard error: 0.003
+=====
+Global Attack Loop:9
+ASR: 0.517, std:0.011, mean ASR: 0.533, standard error: 0.003
+=====
+Global Attack Loop:10
+ASR: 0.520, std:0.011, mean ASR: 0.532, standard error: 0.003
+=====
+Global Attack Loop:11
+ASR: 0.516, std:0.011, mean ASR: 0.531, standard error: 0.003
+=====
+Global Attack Loop:12
+ASR: 0.547, std:0.012, mean ASR: 0.532, standard error: 0.003
+=====
+Global Attack Loop:13
+ASR: 0.513, std:0.012, mean ASR: 0.531, standard error: 0.003
+=====
+Global Attack Loop:14
+ASR: 0.534, std:0.012, mean ASR: 0.531, standard error: 0.003
+=====
+Global Attack Loop:15
+ASR: 0.545, std:0.012, mean ASR: 0.532, standard error: 0.003
+=====
+Global Attack Loop:16
+ASR: 0.532, std:0.012, mean ASR: 0.532, standard error: 0.003
+=====
+Global Attack Loop:17
+ASR: 0.512, std:0.012, mean ASR: 0.531, standard error: 0.003
+=====
+Global Attack Loop:18
+ASR: 0.522, std:0.012, mean ASR: 0.530, standard error: 0.003
+=====
+Global Attack Loop:19
+ASR: 0.534, std:0.012, mean ASR: 0.530, standard error: 0.003
+=====
+Global Attack Loop:20
+ASR: 0.530, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:21
+ASR: 0.521, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:22
+ASR: 0.534, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:23
+ASR: 0.539, std:0.011, mean ASR: 0.531, standard error: 0.002
+=====
+Global Attack Loop:24
+ASR: 0.513, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:25
+ASR: 0.548, std:0.012, mean ASR: 0.531, standard error: 0.002
+=====
+Global Attack Loop:26
+ASR: 0.534, std:0.011, mean ASR: 0.531, standard error: 0.002
+=====
+Global Attack Loop:27
+ASR: 0.536, std:0.011, mean ASR: 0.531, standard error: 0.002
+=====
+Global Attack Loop:28
+ASR: 0.524, std:0.011, mean ASR: 0.531, standard error: 0.002
+=====
+Global Attack Loop:29
+ASR: 0.525, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:30
+ASR: 0.528, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:31
+ASR: 0.516, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:32
+ASR: 0.542, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:33
+ASR: 0.536, std:0.011, mean ASR: 0.531, standard error: 0.002
+=====
+Global Attack Loop:34
+ASR: 0.529, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:35
+ASR: 0.536, std:0.011, mean ASR: 0.531, standard error: 0.002
+=====
+Global Attack Loop:36
+ASR: 0.514, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:37
+ASR: 0.530, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:38
+ASR: 0.525, std:0.011, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:39
+ASR: 0.526, std:0.010, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:40
+ASR: 0.524, std:0.010, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:41
+ASR: 0.537, std:0.010, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:42
+ASR: 0.522, std:0.010, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:43
+ASR: 0.523, std:0.010, mean ASR: 0.530, standard error: 0.002
+=====
+Global Attack Loop:44
+ASR: 0.537, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:45
+ASR: 0.529, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:46
+ASR: 0.508, std:0.010, mean ASR: 0.529, standard error: 0.002
+=====
+Global Attack Loop:47
+ASR: 0.529, std:0.010, mean ASR: 0.529, standard error: 0.001
+=====
+Global Attack Loop:48
+ASR: 0.533, std:0.010, mean ASR: 0.529, standard error: 0.001
+=====
+Global Attack Loop:49
+ASR: 0.536, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:50
+ASR: 0.530, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:51
+ASR: 0.551, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:52
+ASR: 0.525, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:53
+ASR: 0.534, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:54
+ASR: 0.538, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:55
+ASR: 0.552, std:0.010, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:56
+ASR: 0.548, std:0.011, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:57
+ASR: 0.527, std:0.011, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:58
+ASR: 0.531, std:0.010, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:59
+ASR: 0.528, std:0.010, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:60
+ASR: 0.530, std:0.010, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:61
+ASR: 0.536, std:0.010, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:62
+ASR: 0.516, std:0.010, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:63
+ASR: 0.516, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:64
+ASR: 0.522, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:65
+ASR: 0.511, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:66
+ASR: 0.530, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:67
+ASR: 0.517, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:68
+ASR: 0.532, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:69
+ASR: 0.529, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:70
+ASR: 0.541, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:71
+ASR: 0.538, std:0.010, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:72
+ASR: 0.505, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:73
+ASR: 0.542, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:74
+ASR: 0.528, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:75
+ASR: 0.553, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:76
+ASR: 0.527, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:77
+ASR: 0.504, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:78
+ASR: 0.542, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:79
+ASR: 0.539, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:80
+ASR: 0.541, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:81
+ASR: 0.539, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:82
+ASR: 0.531, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:83
+ASR: 0.531, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:84
+ASR: 0.544, std:0.011, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:85
+ASR: 0.540, std:0.011, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:86
+ASR: 0.526, std:0.011, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:87
+ASR: 0.511, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:88
+ASR: 0.524, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:89
+ASR: 0.551, std:0.011, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:90
+ASR: 0.542, std:0.011, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:91
+ASR: 0.530, std:0.011, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:92
+ASR: 0.522, std:0.011, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:93
+ASR: 0.523, std:0.011, mean ASR: 0.531, standard error: 0.001
+=====
+Global Attack Loop:94
+ASR: 0.511, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:95
+ASR: 0.538, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:96
+ASR: 0.541, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:97
+ASR: 0.521, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:98
+ASR: 0.524, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Global Attack Loop:99
+ASR: 0.545, std:0.011, mean ASR: 0.530, standard error: 0.001
+=====
+Attack Summary:
+EncryptionRatio: 20, atdSize: 9, Number of households: 80, mean ASR: 0.531, standard error: 0.001
+asrList: [0.5335 0.5475 0.537 0.519 0.5245 0.5365 0.545 0.5425 0.529 0.5175 0.5205 0.516 0.547 0.5135 0.534 0.545 0.532 0.5125 0.522 0.534 0.53 0.521 0.5345 0.5395 0.513 0.5485 0.534 0.536 0.524 0.525 0.528 0.5165 0.5425 0.536 0.529 0.536 0.514 0.53 0.5255 0.526 0.5245 0.537 0.5225 0.5235 0.5375 0.5295 0.508 0.5295 0.5335 0.5365 0.5305 0.5515 0.525 0.534 0.5385 0.552 0.548 0.527 0.5315 0.528 0.5305 0.5365 0.5165 0.5165 0.522 0.511 0.5305 0.5175 0.5325 0.5295 0.541 0.538 0.505 0.5425 0.528 0.553 0.5275 0.504 0.5425 0.539 0.5415 0.539 0.531 0.5315 0.5445 0.54 0.5265 0.511 0.524 0.5515 0.5425 0.53 0.522 0.5235 0.511 0.538 0.541 0.521 0.524 0.545 0.538]
+processGreedy
+Global Attack Loop:0
+ASR: 0.707, std:NaN, mean ASR: 0.707, standard error: NaN
+=====
+Global Attack Loop:1
+ASR: 0.715, std:0.006, mean ASR: 0.711, standard error: 0.004
+=====
+Global Attack Loop:2
+ASR: 0.707, std:0.005, mean ASR: 0.709, standard error: 0.003
+=====
+Global Attack Loop:3
+ASR: 0.697, std:0.007, mean ASR: 0.706, standard error: 0.004
+=====
+Global Attack Loop:4
+ASR: 0.710, std:0.007, mean ASR: 0.707, standard error: 0.003
+=====
+Global Attack Loop:5
+ASR: 0.736, std:0.013, mean ASR: 0.712, standard error: 0.005
+=====
+Global Attack Loop:6
+ASR: 0.728, std:0.013, mean ASR: 0.714, standard error: 0.005
+=====
+Global Attack Loop:7
+ASR: 0.722, std:0.013, mean ASR: 0.715, standard error: 0.004
+=====
+Global Attack Loop:8
+ASR: 0.719, std:0.012, mean ASR: 0.716, standard error: 0.004
+=====
+Global Attack Loop:9
+ASR: 0.713, std:0.011, mean ASR: 0.715, standard error: 0.004
+=====
+Global Attack Loop:10
+ASR: 0.707, std:0.011, mean ASR: 0.715, standard error: 0.003
+=====
+Global Attack Loop:11
+ASR: 0.703, std:0.011, mean ASR: 0.714, standard error: 0.003
+=====
+Global Attack Loop:12
+ASR: 0.706, std:0.011, mean ASR: 0.713, standard error: 0.003
+=====
+Global Attack Loop:13
+ASR: 0.698, std:0.011, mean ASR: 0.712, standard error: 0.003
+=====
+Global Attack Loop:14
+ASR: 0.698, std:0.011, mean ASR: 0.711, standard error: 0.003
+=====
+Global Attack Loop:15
+ASR: 0.682, std:0.013, mean ASR: 0.709, standard error: 0.003
+=====
+Global Attack Loop:16
+ASR: 0.710, std:0.013, mean ASR: 0.709, standard error: 0.003
+=====
+Global Attack Loop:17
+ASR: 0.714, std:0.012, mean ASR: 0.709, standard error: 0.003
+=====
+Global Attack Loop:18
+ASR: 0.734, std:0.013, mean ASR: 0.711, standard error: 0.003
+=====
+Global Attack Loop:19
+ASR: 0.702, std:0.013, mean ASR: 0.710, standard error: 0.003
+=====
+Global Attack Loop:20
+ASR: 0.720, std:0.013, mean ASR: 0.711, standard error: 0.003
+=====
+Global Attack Loop:21
+ASR: 0.727, std:0.013, mean ASR: 0.711, standard error: 0.003
+=====
+Global Attack Loop:22
+ASR: 0.715, std:0.013, mean ASR: 0.712, standard error: 0.003
+=====
+Global Attack Loop:23
+ASR: 0.696, std:0.013, mean ASR: 0.711, standard error: 0.003
+=====
+Global Attack Loop:24
+ASR: 0.703, std:0.013, mean ASR: 0.711, standard error: 0.003
+=====
+Global Attack Loop:25
+ASR: 0.711, std:0.012, mean ASR: 0.711, standard error: 0.002
+=====
+Global Attack Loop:26
+ASR: 0.706, std:0.012, mean ASR: 0.710, standard error: 0.002
+=====
+Global Attack Loop:27
+ASR: 0.712, std:0.012, mean ASR: 0.710, standard error: 0.002
+=====
+Global Attack Loop:28
+ASR: 0.730, std:0.012, mean ASR: 0.711, standard error: 0.002
+=====
+Global Attack Loop:29
+ASR: 0.715, std:0.012, mean ASR: 0.711, standard error: 0.002
+=====
+Global Attack Loop:30
+ASR: 0.710, std:0.012, mean ASR: 0.711, standard error: 0.002
+=====
+Global Attack Loop:31
+ASR: 0.701, std:0.012, mean ASR: 0.711, standard error: 0.002
+=====
+Global Attack Loop:32
+ASR: 0.711, std:0.012, mean ASR: 0.711, standard error: 0.002
+=====
+Global Attack Loop:33
+ASR: 0.730, std:0.012, mean ASR: 0.711, standard error: 0.002
+=====
+Global Attack Loop:34
+ASR: 0.718, std:0.012, mean ASR: 0.712, standard error: 0.002
+=====
+Global Attack Loop:35
+ASR: 0.716, std:0.012, mean ASR: 0.712, standard error: 0.002
+=====
+Global Attack Loop:36
+ASR: 0.726, std:0.012, mean ASR: 0.712, standard error: 0.002
+=====
+Global Attack Loop:37
+ASR: 0.729, std:0.012, mean ASR: 0.712, standard error: 0.002
+=====
+Global Attack Loop:38
+ASR: 0.720, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:39
+ASR: 0.709, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:40
+ASR: 0.721, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:41
+ASR: 0.734, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:42
+ASR: 0.692, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:43
+ASR: 0.718, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:44
+ASR: 0.725, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:45
+ASR: 0.726, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:46
+ASR: 0.693, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:47
+ASR: 0.707, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:48
+ASR: 0.708, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:49
+ASR: 0.708, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:50
+ASR: 0.694, std:0.012, mean ASR: 0.712, standard error: 0.002
+=====
+Global Attack Loop:51
+ASR: 0.722, std:0.012, mean ASR: 0.712, standard error: 0.002
+=====
+Global Attack Loop:52
+ASR: 0.713, std:0.012, mean ASR: 0.712, standard error: 0.002
+=====
+Global Attack Loop:53
+ASR: 0.713, std:0.012, mean ASR: 0.712, standard error: 0.002
+=====
+Global Attack Loop:54
+ASR: 0.711, std:0.012, mean ASR: 0.712, standard error: 0.002
+=====
+Global Attack Loop:55
+ASR: 0.711, std:0.012, mean ASR: 0.712, standard error: 0.002
+=====
+Global Attack Loop:56
+ASR: 0.725, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:57
+ASR: 0.704, std:0.012, mean ASR: 0.712, standard error: 0.002
+=====
+Global Attack Loop:58
+ASR: 0.723, std:0.012, mean ASR: 0.713, standard error: 0.002
+=====
+Global Attack Loop:59
+ASR: 0.716, std:0.012, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:60
+ASR: 0.709, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:61
+ASR: 0.695, std:0.012, mean ASR: 0.712, standard error: 0.001
+=====
+Global Attack Loop:62
+ASR: 0.703, std:0.012, mean ASR: 0.712, standard error: 0.001
+=====
+Global Attack Loop:63
+ASR: 0.717, std:0.011, mean ASR: 0.712, standard error: 0.001
+=====
+Global Attack Loop:64
+ASR: 0.727, std:0.012, mean ASR: 0.712, standard error: 0.001
+=====
+Global Attack Loop:65
+ASR: 0.717, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:66
+ASR: 0.713, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:67
+ASR: 0.716, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:68
+ASR: 0.724, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:69
+ASR: 0.719, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:70
+ASR: 0.712, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:71
+ASR: 0.713, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:72
+ASR: 0.716, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:73
+ASR: 0.710, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:74
+ASR: 0.714, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:75
+ASR: 0.713, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:76
+ASR: 0.697, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:77
+ASR: 0.722, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:78
+ASR: 0.705, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:79
+ASR: 0.728, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:80
+ASR: 0.711, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:81
+ASR: 0.709, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:82
+ASR: 0.709, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:83
+ASR: 0.720, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:84
+ASR: 0.699, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:85
+ASR: 0.715, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:86
+ASR: 0.726, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:87
+ASR: 0.707, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:88
+ASR: 0.702, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:89
+ASR: 0.712, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:90
+ASR: 0.716, std:0.010, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:91
+ASR: 0.732, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:92
+ASR: 0.721, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:93
+ASR: 0.701, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:94
+ASR: 0.708, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:95
+ASR: 0.697, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:96
+ASR: 0.718, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:97
+ASR: 0.739, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:98
+ASR: 0.698, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Global Attack Loop:99
+ASR: 0.709, std:0.011, mean ASR: 0.713, standard error: 0.001
+=====
+Attack Summary:
+EncryptionRatio: 20, atdSize: 12, Number of households: 80, mean ASR: 0.713, standard error: 0.001
+asrList: [0.707 0.715 0.7065 0.697 0.71 0.7355 0.728 0.722 0.719 0.7125 0.707 0.703 0.7055 0.6975 0.6975 0.6825 0.7095 0.7135 0.734 0.702 0.72 0.7265 0.7145 0.6955 0.7025 0.711 0.7055 0.7115 0.7295 0.7145 0.71 0.7005 0.7105 0.7295 0.7175 0.7155 0.7255 0.7285 0.72 0.709 0.721 0.7335 0.692 0.718 0.725 0.7255 0.6925 0.707 0.7075 0.708 0.6935 0.7215 0.713 0.7125 0.711 0.7105 0.7245 0.704 0.7225 0.7155 0.709 0.6945 0.703 0.7165 0.727 0.7165 0.713 0.716 0.7235 0.7185 0.7115 0.713 0.7155 0.71 0.7135 0.713 0.6965 0.7215 0.7045 0.728 0.7105 0.7085 0.7085 0.7195 0.699 0.7145 0.7255 0.7065 0.702 0.712 0.7155 0.732 0.7205 0.701 0.7075 0.697 0.718 0.7385 0.6975 0.709 0.704]
+processGreedy
+Global Attack Loop:0
+ASR: 0.787, std:NaN, mean ASR: 0.787, standard error: NaN
+=====
+Global Attack Loop:1
+ASR: 0.779, std:0.006, mean ASR: 0.783, standard error: 0.004
+=====
+Global Attack Loop:2
+ASR: 0.762, std:0.013, mean ASR: 0.776, standard error: 0.007
+=====
+Global Attack Loop:3
+ASR: 0.742, std:0.020, mean ASR: 0.768, standard error: 0.010
+=====
+Global Attack Loop:4
+ASR: 0.768, std:0.018, mean ASR: 0.768, standard error: 0.008
+=====
+Global Attack Loop:5
+ASR: 0.764, std:0.016, mean ASR: 0.767, standard error: 0.006
+=====
+Global Attack Loop:6
+ASR: 0.776, std:0.015, mean ASR: 0.768, standard error: 0.006
+=====
+Global Attack Loop:7
+ASR: 0.759, std:0.014, mean ASR: 0.767, standard error: 0.005
+=====
+Global Attack Loop:8
+ASR: 0.766, std:0.013, mean ASR: 0.767, standard error: 0.004
+=====
+Global Attack Loop:9
+ASR: 0.778, std:0.013, mean ASR: 0.768, standard error: 0.004
+=====
+Global Attack Loop:10
+ASR: 0.762, std:0.012, mean ASR: 0.768, standard error: 0.004
+=====
+Global Attack Loop:11
+ASR: 0.757, std:0.012, mean ASR: 0.767, standard error: 0.004
+=====
+Global Attack Loop:12
+ASR: 0.775, std:0.012, mean ASR: 0.767, standard error: 0.003
+=====
+Global Attack Loop:13
+ASR: 0.757, std:0.012, mean ASR: 0.767, standard error: 0.003
+=====
+Global Attack Loop:14
+ASR: 0.761, std:0.011, mean ASR: 0.766, standard error: 0.003
+=====
+Global Attack Loop:15
+ASR: 0.769, std:0.011, mean ASR: 0.767, standard error: 0.003
+=====
+Global Attack Loop:16
+ASR: 0.777, std:0.011, mean ASR: 0.767, standard error: 0.003
+=====
+Global Attack Loop:17
+ASR: 0.769, std:0.011, mean ASR: 0.767, standard error: 0.003
+=====
+Global Attack Loop:18
+ASR: 0.779, std:0.011, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:19
+ASR: 0.768, std:0.010, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:20
+ASR: 0.769, std:0.010, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:21
+ASR: 0.759, std:0.010, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:22
+ASR: 0.771, std:0.010, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:23
+ASR: 0.770, std:0.010, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:24
+ASR: 0.763, std:0.010, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:25
+ASR: 0.775, std:0.010, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:26
+ASR: 0.764, std:0.009, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:27
+ASR: 0.769, std:0.009, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:28
+ASR: 0.784, std:0.009, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:29
+ASR: 0.771, std:0.009, mean ASR: 0.769, standard error: 0.002
+=====
+Global Attack Loop:30
+ASR: 0.760, std:0.009, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:31
+ASR: 0.774, std:0.009, mean ASR: 0.768, standard error: 0.002
+=====
+Global Attack Loop:32
+ASR: 0.778, std:0.009, mean ASR: 0.769, standard error: 0.002
+=====
+Global Attack Loop:33
+ASR: 0.772, std:0.009, mean ASR: 0.769, standard error: 0.002
+=====
+Global Attack Loop:34
+ASR: 0.772, std:0.009, mean ASR: 0.769, standard error: 0.002
+=====
+Global Attack Loop:35
+ASR: 0.779, std:0.009, mean ASR: 0.769, standard error: 0.002
+=====
+Global Attack Loop:36
+ASR: 0.774, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:37
+ASR: 0.778, std:0.009, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:38
+ASR: 0.774, std:0.009, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:39
+ASR: 0.757, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:40
+ASR: 0.762, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:41
+ASR: 0.752, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:42
+ASR: 0.791, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:43
+ASR: 0.771, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:44
+ASR: 0.790, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:45
+ASR: 0.780, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:46
+ASR: 0.763, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:47
+ASR: 0.775, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:48
+ASR: 0.781, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:49
+ASR: 0.776, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:50
+ASR: 0.766, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:51
+ASR: 0.768, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:52
+ASR: 0.763, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:53
+ASR: 0.761, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:54
+ASR: 0.761, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:55
+ASR: 0.761, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:56
+ASR: 0.763, std:0.009, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:57
+ASR: 0.774, std:0.009, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:58
+ASR: 0.771, std:0.009, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:59
+ASR: 0.761, std:0.009, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:60
+ASR: 0.755, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:61
+ASR: 0.788, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:62
+ASR: 0.770, std:0.010, mean ASR: 0.770, standard error: 0.001
+=====
+Global Attack Loop:63
+ASR: 0.752, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:64
+ASR: 0.770, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:65
+ASR: 0.768, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:66
+ASR: 0.766, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:67
+ASR: 0.766, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:68
+ASR: 0.750, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:69
+ASR: 0.770, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:70
+ASR: 0.770, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:71
+ASR: 0.763, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:72
+ASR: 0.774, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:73
+ASR: 0.771, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:74
+ASR: 0.766, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:75
+ASR: 0.777, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:76
+ASR: 0.754, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:77
+ASR: 0.777, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:78
+ASR: 0.750, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:79
+ASR: 0.779, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:80
+ASR: 0.787, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:81
+ASR: 0.779, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:82
+ASR: 0.766, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:83
+ASR: 0.769, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:84
+ASR: 0.769, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:85
+ASR: 0.761, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:86
+ASR: 0.758, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:87
+ASR: 0.768, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:88
+ASR: 0.770, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:89
+ASR: 0.760, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:90
+ASR: 0.756, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:91
+ASR: 0.765, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:92
+ASR: 0.790, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:93
+ASR: 0.763, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:94
+ASR: 0.759, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:95
+ASR: 0.777, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:96
+ASR: 0.768, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:97
+ASR: 0.769, std:0.010, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:98
+ASR: 0.768, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Global Attack Loop:99
+ASR: 0.767, std:0.009, mean ASR: 0.769, standard error: 0.001
+=====
+Attack Summary:
+EncryptionRatio: 20, atdSize: 15, Number of households: 80, mean ASR: 0.769, standard error: 0.001
+asrList: [0.7875 0.779 0.7625 0.7415 0.7685 0.764 0.776 0.759 0.7665 0.7785 0.762 0.757 0.775 0.757 0.7615 0.7695 0.7775 0.769 0.779 0.7685 0.7695 0.759 0.771 0.7705 0.7635 0.775 0.7645 0.7695 0.784 0.7715 0.76 0.774 0.778 0.7725 0.7725 0.779 0.774 0.7785 0.7745 0.757 0.7625 0.752 0.791 0.7715 0.79 0.78 0.7635 0.7755 0.781 0.7765 0.766 0.768 0.763 0.7615 0.761 0.7615 0.763 0.7745 0.771 0.7615 0.755 0.788 0.7705 0.7525 0.77 0.7685 0.766 0.766 0.7495 0.7705 0.7705 0.7635 0.774 0.771 0.766 0.777 0.754 0.7775 0.75 0.7795 0.787 0.7795 0.7665 0.7695 0.7695 0.7615 0.7585 0.768 0.7705 0.76 0.756 0.7655 0.7905 0.763 0.7595 0.777 0.768 0.769 0.7685 0.767 0.7765]
+processGreedy
+Global Attack Loop:0
+ASR: 0.766, std:NaN, mean ASR: 0.766, standard error: NaN
+=====
+Global Attack Loop:1
+ASR: 0.791, std:0.017, mean ASR: 0.779, standard error: 0.012
+=====
+Global Attack Loop:2
+ASR: 0.774, std:0.013, mean ASR: 0.777, standard error: 0.007
+=====
+Global Attack Loop:3
+ASR: 0.793, std:0.013, mean ASR: 0.781, standard error: 0.006
+=====
+Global Attack Loop:4
+ASR: 0.776, std:0.011, mean ASR: 0.780, standard error: 0.005
+=====
+Global Attack Loop:5
+ASR: 0.784, std:0.010, mean ASR: 0.781, standard error: 0.004
+=====
+Global Attack Loop:6
+ASR: 0.785, std:0.010, mean ASR: 0.782, standard error: 0.004
+=====
+Global Attack Loop:7
+ASR: 0.800, std:0.011, mean ASR: 0.784, standard error: 0.004
+=====
+Global Attack Loop:8
+ASR: 0.788, std:0.010, mean ASR: 0.784, standard error: 0.003
+=====
+Global Attack Loop:9
+ASR: 0.792, std:0.010, mean ASR: 0.785, standard error: 0.003
+=====
+Global Attack Loop:10
+ASR: 0.797, std:0.010, mean ASR: 0.786, standard error: 0.003
+=====
+Global Attack Loop:11
+ASR: 0.787, std:0.010, mean ASR: 0.786, standard error: 0.003
+=====
+Global Attack Loop:12
+ASR: 0.781, std:0.009, mean ASR: 0.786, standard error: 0.003
+=====
+Global Attack Loop:13
+ASR: 0.779, std:0.009, mean ASR: 0.786, standard error: 0.002
+=====
+Global Attack Loop:14
+ASR: 0.767, std:0.010, mean ASR: 0.784, standard error: 0.003
+=====
+Global Attack Loop:15
+ASR: 0.788, std:0.010, mean ASR: 0.785, standard error: 0.002
+=====
+Global Attack Loop:16
+ASR: 0.779, std:0.010, mean ASR: 0.784, standard error: 0.002
+=====
+Global Attack Loop:17
+ASR: 0.774, std:0.010, mean ASR: 0.784, standard error: 0.002
+=====
+Global Attack Loop:18
+ASR: 0.782, std:0.009, mean ASR: 0.784, standard error: 0.002
+=====
+Global Attack Loop:19
+ASR: 0.778, std:0.009, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:20
+ASR: 0.779, std:0.009, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:21
+ASR: 0.776, std:0.009, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:22
+ASR: 0.788, std:0.009, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:23
+ASR: 0.791, std:0.009, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:24
+ASR: 0.772, std:0.009, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:25
+ASR: 0.776, std:0.009, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:26
+ASR: 0.786, std:0.009, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:27
+ASR: 0.769, std:0.009, mean ASR: 0.782, standard error: 0.002
+=====
+Global Attack Loop:28
+ASR: 0.789, std:0.009, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:29
+ASR: 0.785, std:0.009, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:30
+ASR: 0.777, std:0.008, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:31
+ASR: 0.795, std:0.009, mean ASR: 0.783, standard error: 0.002
+=====
+Global Attack Loop:32
+ASR: 0.782, std:0.009, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:33
+ASR: 0.795, std:0.009, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:34
+ASR: 0.780, std:0.009, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:35
+ASR: 0.778, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:36
+ASR: 0.797, std:0.009, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:37
+ASR: 0.787, std:0.009, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:38
+ASR: 0.791, std:0.009, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:39
+ASR: 0.779, std:0.008, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:40
+ASR: 0.779, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:41
+ASR: 0.790, std:0.008, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:42
+ASR: 0.787, std:0.008, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:43
+ASR: 0.784, std:0.008, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:44
+ASR: 0.787, std:0.008, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:45
+ASR: 0.789, std:0.008, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:46
+ASR: 0.774, std:0.008, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:47
+ASR: 0.772, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:48
+ASR: 0.785, std:0.008, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:49
+ASR: 0.783, std:0.008, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:50
+ASR: 0.790, std:0.008, mean ASR: 0.784, standard error: 0.001
+=====
+Global Attack Loop:51
+ASR: 0.767, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:52
+ASR: 0.789, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:53
+ASR: 0.784, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:54
+ASR: 0.778, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:55
+ASR: 0.780, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:56
+ASR: 0.785, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:57
+ASR: 0.777, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:58
+ASR: 0.762, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:59
+ASR: 0.786, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:60
+ASR: 0.778, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:61
+ASR: 0.789, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:62
+ASR: 0.770, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:63
+ASR: 0.780, std:0.008, mean ASR: 0.783, standard error: 0.001
+=====
+Global Attack Loop:64
+ASR: 0.762, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:65
+ASR: 0.777, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:66
+ASR: 0.772, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:67
+ASR: 0.780, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:68
+ASR: 0.787, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:69
+ASR: 0.774, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:70
+ASR: 0.771, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:71
+ASR: 0.799, std:0.009, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:72
+ASR: 0.787, std:0.009, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:73
+ASR: 0.786, std:0.009, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:74
+ASR: 0.771, std:0.009, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:75
+ASR: 0.774, std:0.009, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:76
+ASR: 0.769, std:0.009, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:77
+ASR: 0.778, std:0.009, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:78
+ASR: 0.784, std:0.009, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:79
+ASR: 0.778, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:80
+ASR: 0.789, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:81
+ASR: 0.777, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:82
+ASR: 0.776, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:83
+ASR: 0.789, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:84
+ASR: 0.786, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:85
+ASR: 0.778, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:86
+ASR: 0.779, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:87
+ASR: 0.780, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:88
+ASR: 0.774, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:89
+ASR: 0.781, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:90
+ASR: 0.772, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:91
+ASR: 0.774, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:92
+ASR: 0.769, std:0.008, mean ASR: 0.781, standard error: 0.001
+=====
+Global Attack Loop:93
+ASR: 0.790, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:94
+ASR: 0.782, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:95
+ASR: 0.794, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:96
+ASR: 0.776, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Global Attack Loop:97
+ASR: 0.770, std:0.008, mean ASR: 0.781, standard error: 0.001
+=====
+Global Attack Loop:98
+ASR: 0.776, std:0.008, mean ASR: 0.781, standard error: 0.001
+=====
+Global Attack Loop:99
+ASR: 0.790, std:0.008, mean ASR: 0.782, standard error: 0.001
+=====
+Attack Summary:
+EncryptionRatio: 20, atdSize: 18, Number of households: 80, mean ASR: 0.782, standard error: 0.001
+asrList: [0.7665 0.791 0.774 0.793 0.7765 0.7845 0.7855 0.8 0.7885 0.7925 0.797 0.787 0.7815 0.7795 0.767 0.7885 0.7795 0.774 0.7825 0.7785 0.779 0.776 0.788 0.791 0.7725 0.7765 0.786 0.7695 0.789 0.7855 0.7775 0.795 0.7825 0.7955 0.7805 0.778 0.797 0.787 0.791 0.7795 0.779 0.79 0.787 0.784 0.7875 0.7895 0.7745 0.7725 0.785 0.7835 0.7905 0.7675 0.7895 0.784 0.778 0.78 0.7855 0.777 0.7625 0.7865 0.7785 0.789 0.7705 0.78 0.762 0.7775 0.772 0.78 0.787 0.774 0.771 0.799 0.787 0.7865 0.7715 0.7745 0.769 0.7785 0.7845 0.778 0.789 0.7775 0.776 0.789 0.786 0.778 0.7795 0.78 0.7745 0.7815 0.772 0.774 0.769 0.79 0.782 0.7945 0.7765 0.77 0.7765 0.7905 0.7845]
+processGreedy
+Global Attack Loop:0
+ASR: 0.793, std:NaN, mean ASR: 0.793, standard error: NaN
+=====
+Global Attack Loop:1
+ASR: 0.802, std:0.006, mean ASR: 0.798, standard error: 0.005
+=====
+Global Attack Loop:2
+ASR: 0.783, std:0.010, mean ASR: 0.793, standard error: 0.005
+=====
+Global Attack Loop:3
+ASR: 0.778, std:0.011, mean ASR: 0.789, standard error: 0.005
+=====
+Global Attack Loop:4
+ASR: 0.783, std:0.010, mean ASR: 0.788, standard error: 0.004
+=====
+Global Attack Loop:5
+ASR: 0.785, std:0.009, mean ASR: 0.788, standard error: 0.004
+=====
+Global Attack Loop:6
+ASR: 0.789, std:0.008, mean ASR: 0.788, standard error: 0.003
+=====
+Global Attack Loop:7
+ASR: 0.788, std:0.008, mean ASR: 0.788, standard error: 0.003
+=====
+Global Attack Loop:8
+ASR: 0.783, std:0.007, mean ASR: 0.787, standard error: 0.002
+=====
+Global Attack Loop:9
+ASR: 0.794, std:0.007, mean ASR: 0.788, standard error: 0.002
+=====
+Global Attack Loop:10
+ASR: 0.774, std:0.008, mean ASR: 0.787, standard error: 0.002
+=====
+Global Attack Loop:11
+ASR: 0.774, std:0.008, mean ASR: 0.786, standard error: 0.002
+=====
+Global Attack Loop:12
+ASR: 0.782, std:0.008, mean ASR: 0.786, standard error: 0.002
+=====
+Global Attack Loop:13
+ASR: 0.791, std:0.008, mean ASR: 0.786, standard error: 0.002
+=====
+Global Attack Loop:14
+ASR: 0.780, std:0.008, mean ASR: 0.786, standard error: 0.002
+=====
+Global Attack Loop:15
+ASR: 0.781, std:0.008, mean ASR: 0.785, standard error: 0.002
+=====
+Global Attack Loop:16
+ASR: 0.797, std:0.008, mean ASR: 0.786, standard error: 0.002
+=====
+Global Attack Loop:17
+ASR: 0.790, std:0.008, mean ASR: 0.786, standard error: 0.002
+=====
+Global Attack Loop:18
+ASR: 0.781, std:0.008, mean ASR: 0.786, standard error: 0.002
+=====
+Global Attack Loop:19
+ASR: 0.786, std:0.007, mean ASR: 0.786, standard error: 0.002
+=====
+Global Attack Loop:20
+ASR: 0.787, std:0.007, mean ASR: 0.786, standard error: 0.002
+=====
+Global Attack Loop:21
+ASR: 0.788, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:22
+ASR: 0.785, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:23
+ASR: 0.771, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:24
+ASR: 0.789, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:25
+ASR: 0.782, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:26
+ASR: 0.795, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:27
+ASR: 0.791, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:28
+ASR: 0.778, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:29
+ASR: 0.791, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:30
+ASR: 0.785, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:31
+ASR: 0.785, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:32
+ASR: 0.784, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:33
+ASR: 0.788, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:34
+ASR: 0.783, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:35
+ASR: 0.783, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:36
+ASR: 0.790, std:0.006, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:37
+ASR: 0.777, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:38
+ASR: 0.787, std:0.006, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:39
+ASR: 0.784, std:0.006, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:40
+ASR: 0.798, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:41
+ASR: 0.790, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:42
+ASR: 0.787, std:0.006, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:43
+ASR: 0.776, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:44
+ASR: 0.786, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:45
+ASR: 0.785, std:0.006, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:46
+ASR: 0.799, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:47
+ASR: 0.770, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:48
+ASR: 0.768, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:49
+ASR: 0.783, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:50
+ASR: 0.788, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:51
+ASR: 0.784, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:52
+ASR: 0.790, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:53
+ASR: 0.786, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:54
+ASR: 0.771, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:55
+ASR: 0.777, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:56
+ASR: 0.791, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:57
+ASR: 0.786, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:58
+ASR: 0.781, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:59
+ASR: 0.793, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:60
+ASR: 0.779, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:61
+ASR: 0.796, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:62
+ASR: 0.785, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:63
+ASR: 0.785, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:64
+ASR: 0.784, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:65
+ASR: 0.784, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:66
+ASR: 0.783, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:67
+ASR: 0.778, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:68
+ASR: 0.795, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:69
+ASR: 0.782, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:70
+ASR: 0.788, std:0.007, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:71
+ASR: 0.805, std:0.007, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:72
+ASR: 0.807, std:0.008, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:73
+ASR: 0.790, std:0.008, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:74
+ASR: 0.772, std:0.008, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:75
+ASR: 0.784, std:0.008, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:76
+ASR: 0.774, std:0.008, mean ASR: 0.786, standard error: 0.001
+=====
+Global Attack Loop:77
+ASR: 0.766, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:78
+ASR: 0.760, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:79
+ASR: 0.785, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:80
+ASR: 0.784, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:81
+ASR: 0.774, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:82
+ASR: 0.776, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:83
+ASR: 0.783, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:84
+ASR: 0.773, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:85
+ASR: 0.788, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:86
+ASR: 0.793, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:87
+ASR: 0.771, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:88
+ASR: 0.799, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:89
+ASR: 0.790, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:90
+ASR: 0.786, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:91
+ASR: 0.792, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:92
+ASR: 0.802, std:0.009, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:93
+ASR: 0.792, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:94
+ASR: 0.788, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:95
+ASR: 0.794, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:96
+ASR: 0.784, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:97
+ASR: 0.774, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:98
+ASR: 0.781, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Global Attack Loop:99
+ASR: 0.773, std:0.008, mean ASR: 0.785, standard error: 0.001
+=====
+Attack Summary:
+EncryptionRatio: 20, atdSize: 21, Number of households: 80, mean ASR: 0.785, standard error: 0.001
+asrList: [0.7935 0.8025 0.7835 0.778 0.783 0.7855 0.7895 0.788 0.783 0.794 0.774 0.7745 0.7825 0.791 0.78 0.7815 0.797 0.7905 0.7815 0.7865 0.7875 0.788 0.7855 0.7715 0.7895 0.782 0.795 0.791 0.7785 0.791 0.785 0.785 0.784 0.7885 0.783 0.783 0.7905 0.777 0.7875 0.784 0.798 0.7905 0.7875 0.776 0.7865 0.785 0.799 0.77 0.7685 0.7835 0.7885 0.7845 0.79 0.786 0.7715 0.777 0.7915 0.7865 0.7815 0.7935 0.7795 0.796 0.7855 0.7855 0.7845 0.7845 0.783 0.778 0.7955 0.7825 0.788 0.8055 0.807 0.79 0.772 0.784 0.7745 0.7665 0.7605 0.7855 0.7845 0.774 0.776 0.7835 0.773 0.788 0.793 0.7715 0.799 0.7905 0.786 0.792 0.802 0.792 0.7885 0.794 0.7845 0.774 0.7815 0.7735 0.7825]
+processGreedy
+Global Attack Loop:0
+ASR: 0.792, std:NaN, mean ASR: 0.792, standard error: NaN
+=====
+Global Attack Loop:1
+ASR: 0.792, std:0.000, mean ASR: 0.792, standard error: 0.000
+=====
+Global Attack Loop:2
+ASR: 0.782, std:0.006, mean ASR: 0.789, standard error: 0.003
+=====
+Global Attack Loop:3
+ASR: 0.788, std:0.005, mean ASR: 0.789, standard error: 0.002
+=====
+Global Attack Loop:4
+ASR: 0.788, std:0.004, mean ASR: 0.789, standard error: 0.002
+=====
+Global Attack Loop:5
+ASR: 0.800, std:0.006, mean ASR: 0.791, standard error: 0.002
+=====
+Global Attack Loop:6
+ASR: 0.776, std:0.008, mean ASR: 0.788, standard error: 0.003
+=====
+Global Attack Loop:7
+ASR: 0.793, std:0.007, mean ASR: 0.789, standard error: 0.003
+=====
+Global Attack Loop:8
+ASR: 0.790, std:0.007, mean ASR: 0.789, standard error: 0.002
+=====
+Global Attack Loop:9
+ASR: 0.789, std:0.007, mean ASR: 0.789, standard error: 0.002
+=====
+Global Attack Loop:10
+ASR: 0.806, std:0.008, mean ASR: 0.791, standard error: 0.002
+=====
+Global Attack Loop:11
+ASR: 0.786, std:0.008, mean ASR: 0.790, standard error: 0.002
+=====
+Global Attack Loop:12
+ASR: 0.776, std:0.008, mean ASR: 0.789, standard error: 0.002
+=====
+Global Attack Loop:13
+ASR: 0.796, std:0.008, mean ASR: 0.790, standard error: 0.002
+=====
+Global Attack Loop:14
+ASR: 0.775, std:0.009, mean ASR: 0.789, standard error: 0.002
+=====
+Global Attack Loop:15
+ASR: 0.796, std:0.009, mean ASR: 0.789, standard error: 0.002
+=====
+Global Attack Loop:16
+ASR: 0.800, std:0.009, mean ASR: 0.790, standard error: 0.002
+=====
+Global Attack Loop:17
+ASR: 0.794, std:0.009, mean ASR: 0.790, standard error: 0.002
+=====
+Global Attack Loop:18
+ASR: 0.797, std:0.009, mean ASR: 0.791, standard error: 0.002
+=====
+Global Attack Loop:19
+ASR: 0.793, std:0.008, mean ASR: 0.791, standard error: 0.002
+=====
+Global Attack Loop:20
+ASR: 0.788, std:0.008, mean ASR: 0.791, standard error: 0.002
+=====
+Global Attack Loop:21
+ASR: 0.780, std:0.008, mean ASR: 0.790, standard error: 0.002
+=====
+Global Attack Loop:22
+ASR: 0.781, std:0.008, mean ASR: 0.790, standard error: 0.002
+=====
+Global Attack Loop:23
+ASR: 0.792, std:0.008, mean ASR: 0.790, standard error: 0.002
+=====
+Global Attack Loop:24
+ASR: 0.791, std:0.008, mean ASR: 0.790, standard error: 0.002
+=====
+Global Attack Loop:25
+ASR: 0.797, std:0.008, mean ASR: 0.790, standard error: 0.002
+=====
+Global Attack Loop:26
+ASR: 0.791, std:0.008, mean ASR: 0.790, standard error: 0.002
+=====
+Global Attack Loop:27
+ASR: 0.799, std:0.008, mean ASR: 0.791, standard error: 0.001
+=====
+Global Attack Loop:28
+ASR: 0.791, std:0.008, mean ASR: 0.791, standard error: 0.001
+=====
+Global Attack Loop:29
+ASR: 0.794, std:0.008, mean ASR: 0.791, standard error: 0.001
+=====
+Global Attack Loop:30
+ASR: 0.788, std:0.007, mean ASR: 0.791, standard error: 0.001
+=====
+Global Attack Loop:31
+ASR: 0.784, std:0.007, mean ASR: 0.790, standard error: 0.001
+=====
+Global Attack Loop:32
+ASR: 0.798, std:0.007, mean ASR: 0.791, standard error: 0.001
+=====
+Global Attack Loop:33
+ASR: 0.773, std:0.008, mean ASR: 0.790, standard error: 0.001
+=====
+Global Attack Loop:34
+ASR: 0.784, std:0.008, mean ASR: 0.790, standard error: 0.001
+=====
+Global Attack Loop:35
+ASR: 0.785, std:0.008, mean ASR: 0.790, standard error: 0.001
+=====
+Global Attack Loop:36
+ASR: 0.779, std:0.008, mean ASR: 0.790, standard error: 0.001
+=====
+Global Attack Loop:37
+ASR: 0.783, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:38
+ASR: 0.783, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:39
+ASR: 0.783, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:40
+ASR: 0.797, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:41
+ASR: 0.798, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:42
+ASR: 0.801, std:0.008, mean ASR: 0.790, standard error: 0.001
+=====
+Global Attack Loop:43
+ASR: 0.783, std:0.008, mean ASR: 0.790, standard error: 0.001
+=====
+Global Attack Loop:44
+ASR: 0.784, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:45
+ASR: 0.784, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:46
+ASR: 0.780, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:47
+ASR: 0.781, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:48
+ASR: 0.804, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:49
+ASR: 0.787, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:50
+ASR: 0.776, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====
+Global Attack Loop:51
+ASR: 0.786, std:0.008, mean ASR: 0.789, standard error: 0.001
+=====

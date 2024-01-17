@@ -1,0 +1,19 @@
+>>>>>>>>>>
+Strategy: Global Entropy High To Low
+Dataset: Water
+Unique Attacker Block: False
+Target: Entropy based
+SE threshold  0.01
+Global Attack Loop:  2000
+Number of Households:  80
+Encryption ratio:  60 %
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+wd: C:\Users\23304161\source\repos\lattigo
+path: examples\datasets\water\households_10240
+folder: C:\Users\23304161\source\repos\lattigo\examples\datasets\water\households_10240
+fileList:80
+processGreedy
+not sufficient records are encrypted. markedNumbers=375841, thresholdNumber=491520
+sufficient records are encrypted. markedNumbers=491520, thresholdNumber=491520
+greedy encryption time: 349.08 seconds
+Main() Done in 5m49.7962673s 
