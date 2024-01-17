@@ -1,7 +1,7 @@
 /**
 running command:
 cd <folder of the project>
-go run .\examples\dckks\6ASR\single_ASR_greedy.go 1 2 0 1 20
+go run .\examples\dckks\6ASR\single_ASR_greedy.go 1 2 0 1 60 20
 */
 package main
 
@@ -112,6 +112,8 @@ var usedHouses = map[int]int{}
 var asrList []float64
 var edgeNumberArray = []int{}
 
+var elapsedTime time.Duration
+
 func main() {
 	var err error
 
@@ -130,11 +132,12 @@ func main() {
 		uniqueATD = args[2]
 		currentTarget = args[3]
 		encryptionRatio = args[4]
+		maxHouseholdsNumber = args[5]
 	}
 
 	//write to file
-	str := "asr_greedy_enc"
-	fileName := fmt.Sprintf("%s_%d_%d.txt", str, currentDataset, encryptionRatio)
+	str := "asr_greedy_time"
+	fileName := fmt.Sprintf("%s_%d_%d_%d.txt", str, currentDataset, encryptionRatio, maxHouseholdsNumber)
 
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -171,8 +174,6 @@ func main() {
 	} else {
 		fmt.Println("Target: Transition based")
 	}
-	fmt.Println("encryptionRatio:", encryptionRatio)
-
 	fmt.Println("SE threshold ", 0.01)
 	fmt.Println("Global Attack Loop: ", GLOBAL_ATTACK_LOOP)
 	fmt.Println("Number of Households: ", maxHouseholdsNumber)
@@ -232,15 +233,20 @@ func main() {
 	}
 	fmt.Printf("fileList:%d\n", len(fileList))
 
-	for atdSize = 3; atdSize <= 48; atdSize += 3 {
-		for percent := 100; percent >= 100; percent -= 10 { //TODO: matching proportion like 50% ATD is matched
-			min_percent_matched = percent
-			for selectedNum := maxHouseholdsNumber; selectedNum <= maxHouseholdsNumber; selectedNum += 5 {
-				maxHouseholdsNumber = selectedNum
-				processGreedy(fileList[:selectedNum], params)
+	tLoop := 1000
+	for t := 0; t < tLoop; t++ {
+		for atdSize = 48; atdSize <= 48; atdSize += 3 {
+			for percent := 100; percent >= 100; percent -= 10 { //TODO: matching proportion like 50% ATD is matched
+				min_percent_matched = percent
+				for selectedNum := maxHouseholdsNumber; selectedNum <= maxHouseholdsNumber; selectedNum += 5 {
+					maxHouseholdsNumber = selectedNum
+					processGreedy(fileList[:selectedNum], params)
+				}
 			}
 		}
 	}
+	elapsedSeconds := elapsedTime.Seconds() / float64(tLoop)
+	fmt.Printf("greedy encryption time: %.2f seconds\n", elapsedSeconds)
 
 	fmt.Printf("Main() Done in %s \n", time.Since(start))
 }
@@ -263,6 +269,7 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 
 	thresholdNumber := len(P) * globalPartyRows * encryptionRatio / 100
 
+	startTime := time.Now()
 	for markedNumbers < thresholdNumber {
 		maxUniquenessScore := -1.0
 		for edge_index := range edges {
@@ -305,9 +312,10 @@ func processGreedy(fileList []string, params ckks.Parameters) {
 		}
 		fmt.Printf("sufficient records are encrypted. markedNumbers=%d, thresholdNumber=%d\n", markedNumbers, thresholdNumber)
 	}
-
 	greedyEncryptBlocks(P)
-	memberIdentificationAttack(P) //under current partial encryption
+
+	elapsedTime += time.Since(startTime)
+	// memberIdentificationAttack(P) //under current partial encryption
 }
 
 func greedyEncryptBlocks(P []*party) {

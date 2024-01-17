@@ -1,3 +1,8 @@
+/**
+running command:
+cd <folder of the project>
+go run .\examples\dckks\5ASR\single_ASR_extended.go 1 2 0 1 60 80
+*/
 package main
 
 import (
@@ -80,7 +85,7 @@ const ELECTRICITY_TRANSITION_EQUALITY_THRESHOLD = 2
 
 var atdSize = 24 // element number of unique attacker data
 var min_percent_matched = 100
-var max_attackLoop = 2000
+var max_attackLoop = 1000
 
 var maxHouseholdsNumber = 80
 
@@ -93,6 +98,7 @@ var currentStrategy int = 1 //Global(1), Household(2), Random(3)
 var currentDataset int = 1  //water(1),electricity(2)
 var uniqueATD int = 0       // unique attacker data, 1 for true, 0 for false
 var currentTarget = 2       //entropy(1),transition(2)
+var encryptionRatio int
 
 var transitionEqualityThreshold int
 var sectionNum int
@@ -100,8 +106,11 @@ var usedRandomStartPartyPairs = map[int][]int{}
 var usedHouses = map[int]int{}
 var house_sample = []float64{}
 
+var elapsedTime time.Duration
+
 func main() {
 	var args []int
+	var err error
 
 	for _, arg := range os.Args[1:] {
 		num, err := strconv.Atoi(arg)
@@ -117,7 +126,25 @@ func main() {
 		currentDataset = args[1]
 		uniqueATD = args[2]
 		currentTarget = args[3]
+		encryptionRatio = args[4]
+		maxHouseholdsNumber = args[5]
 	}
+
+	//write to file
+	str := "asr_entended_time"
+	fileName := fmt.Sprintf("%s_%d_%d_%d_%d.txt", str, currentDataset, currentTarget, encryptionRatio, maxHouseholdsNumber)
+
+	file, err := os.Create(fileName)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	originalOutput := os.Stdout
+	defer func() { os.Stdout = originalOutput }()
+	os.Stdout = file
+	//write to file
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	if currentStrategy == STRATEGY_GLOBAL {
@@ -147,14 +174,14 @@ func main() {
 	fmt.Println("Max Attack Loop: ", max_attackLoop)
 	fmt.Println("ATD Size: ", atdSize)
 	fmt.Println("Number of Households: ", maxHouseholdsNumber)
-	fmt.Println("Encryption ratio: 60%")
+	fmt.Println("Encryption ratio: ", encryptionRatio, "%")
 
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
 	rand.Seed(time.Now().UnixNano())
 	start := time.Now()
 	fileList := []string{}
-	var err error
+
 	paramsDef := ckks.PN10QP27CI
 	params, err := ckks.NewParametersFromLiteral(paramsDef)
 	check(err)
@@ -207,7 +234,7 @@ func main() {
 	for percent := 100; percent >= 100; percent -= 10 { //TODO matching proportion
 		min_percent_matched = percent
 		fmt.Println("Households, ASR, Standard Error")
-		for selectedNum := 5; selectedNum <= 80; selectedNum += 5 {
+		for selectedNum := 80; selectedNum <= 80; selectedNum += 5 {
 			maxHouseholdsNumber = selectedNum
 			var standard_error = 0.0
 			var std = 0.0
@@ -241,6 +268,10 @@ func main() {
 			fmt.Printf("Number of households: %d, mean ASR: %.3f, standard error: %.3f\n", maxHouseholdsNumber, mean, standard_error)
 		}
 	}
+
+	elapsedSeconds := elapsedTime.Seconds() / float64(max_attackLoop)
+	fmt.Printf("asr_enxteded encryption time: %.2f seconds\n", elapsedSeconds)
+
 	fmt.Printf("Main() Done in %s \n", time.Since(start))
 }
 
@@ -248,11 +279,13 @@ func main() {
 func process(fileList []string, params ckks.Parameters) {
 	P := genparties(params, fileList)
 	_, _, _, _, _, entropySum, transitionSum := genInputs(P)
-	encryptedSectionNum = sectionNum
+	//e.g., sectionNum=10, encryptionRatio=20, encryptedSectionNum = 2
+	encryptedSectionNum = sectionNum * encryptionRatio / 100
 
 	var entropyReduction float64
 	var transitionReduction float64
 
+	startTime := time.Now()
 	for en := 0; en <= encryptedSectionNum; en++ {
 		if currentStrategy == STRATEGY_GLOBAL {
 			_, entropyReduction, transitionReduction = markEncryptedSectionsByGlobal(en, P, entropySum, transitionSum)
@@ -264,11 +297,12 @@ func process(fileList []string, params ckks.Parameters) {
 		entropySum -= entropyReduction
 		transitionSum -= transitionReduction
 
-		if en == 6 {
-			memberIdentificationAttack(P) //under current partial encryption
-		}
+		// if en == 6 {
+		// 	memberIdentificationAttack(P) //under current partial encryption
+		// }
 		usedRandomStartPartyPairs = map[int][]int{} //clear map for the next loop
 	}
+	elapsedTime += time.Since(startTime)
 }
 
 func memberIdentificationAttack(P []*party) { //TODO:atd size
